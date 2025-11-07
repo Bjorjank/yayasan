@@ -104,11 +104,15 @@ public function users(Request $req)
 public function messages(ChatRoom $room, Request $req)
 {
     $me = auth()->id();
-    // batasi hanya participant yang boleh akses
     $isParticipant = $room->participants()->where('user_id', $me)->exists();
     if (!$isParticipant) {
         return response()->json(['ok'=>false, 'error'=>'FORBIDDEN'], 403);
     }
+
+    // ✅ tandai read
+    \App\Models\ChatParticipant::where('room_id', $room->id)
+        ->where('user_id', $me)
+        ->update(['last_read_at' => now()]);
 
     $take = min(100, (int) $req->query('take', 50));
     $msgs = \App\Models\ChatMessage::where('room_id', $room->id)
@@ -122,6 +126,89 @@ public function messages(ChatRoom $room, Request $req)
 
     return response()->json(['ok'=>true, 'messages'=>$msgs]);
 }
+
+public function recent(Request $req)
+{
+    $me = auth()->id();
+
+    // Ambil semua room DIRECT yang diikuti user ini
+    $myRooms = \App\Models\ChatParticipant::query()
+        ->where('user_id', $me)
+        ->pluck('room_id');
+
+    if ($myRooms->isEmpty()) {
+        return response()->json(['ok'=>true, 'items'=>[]]);
+    }
+
+    // Ambil pesan terakhir per room
+    $lastMessages = \App\Models\ChatMessage::query()
+        ->selectRaw('room_id, MAX(id) as max_id')
+        ->whereIn('room_id', $myRooms)
+        ->groupBy('room_id');
+
+    $latest = \DB::table('chat_messages as m')
+        ->joinSub($lastMessages, 'lm', fn($j)=>$j->on('m.room_id','=','lm.room_id')->on('m.id','=','lm.max_id'))
+        ->select('m.room_id','m.message','m.sender_id','m.created_at')
+        ->get()
+        ->keyBy('room_id');
+
+    // Ambil peer (lawan chat) untuk tiap room direct
+    $rooms = \App\Models\ChatRoom::query()
+        ->whereIn('id', $myRooms)
+        ->where('type', \App\Models\ChatRoom::TYPE_DIRECT)
+        ->get(['id']);
+
+    $items = [];
+
+    foreach ($rooms as $r) {
+        // Tentukan peer = participant lain
+        $peerId = \App\Models\ChatParticipant::where('room_id',$r->id)
+            ->where('user_id','!=',$me)->value('user_id');
+
+        $peer = $peerId ? \App\Models\User::find($peerId, ['id','name','email']) : null;
+
+        $lm = $latest[$r->id] ?? null;
+
+        // Hitung unread (pesan masuk setelah last_read_at)
+        $lastReadAt = \App\Models\ChatParticipant::where('room_id',$r->id)
+            ->where('user_id',$me)->value('last_read_at');
+
+        $unread = 0;
+        if ($lastReadAt) {
+            $unread = \App\Models\ChatMessage::where('room_id',$r->id)
+                ->where('sender_id','!=',$me)
+                ->where('created_at','>', $lastReadAt)
+                ->count();
+        } else {
+            // Jika tidak pernah baca, hitung semua pesan lawan sebagai unread
+            $unread = \App\Models\ChatMessage::where('room_id',$r->id)
+                ->where('sender_id','!=',$me)
+                ->count();
+        }
+
+        $items[] = [
+            'room_id'     => $r->id,
+            'peer_id'     => $peer?->id,
+            'title'       => $peer?->name ?? 'Percakapan',
+            'subtitle'    => $peer?->email,
+            'last_message'=> $lm?->message,
+            'last_at'     => $lm?->created_at ? \Illuminate\Support\Carbon::parse($lm->created_at)->toIso8601String() : null,
+            'unread'      => $unread,
+        ];
+    }
+
+    // Urutkan recent: terbaru di atas
+    usort($items, function($a,$b){
+        return strcmp($b['last_at'] ?? '1970-01-01', $a['last_at'] ?? '1970-01-01');
+    });
+
+    // Batasi (opsional)
+    $limit = (int) $req->query('take', 20);
+    $items = array_slice($items, 0, max(1, min(100, $limit)));
+
+    return response()->json(['ok'=>true, 'items'=>$items]);
+}
+
 
 
 }

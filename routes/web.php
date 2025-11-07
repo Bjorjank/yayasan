@@ -48,4 +48,10 @@ Route::middleware('auth')->group(function () {
 });
 
 
+Route::middleware('auth')->group(function () {
+    // ... existing chat routes
+    Route::get('/chat/recent', [ChatController::class,'recent'])->name('chat.recent');
+});
+
+
 require __DIR__.'/auth.php';
