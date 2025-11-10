@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <title>{{ config('app.name', 'Laravel') }}</title>
 
+<<<<<<< HEAD
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @stack('scripts')
@@ -18,44 +16,59 @@
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
+=======
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+>>>>>>> cb2d8e6 (update front)
 
-            <!-- Page Heading -->
-            @php
-                // Breeze biasanya mengisi $header lewat component slot.
-                // Untuk Blade layout biasa, izinkan section('header').
-                $headerSlot = $header ?? null;
-            @endphp
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
 
-            @if (isset($headerSlot) || View::hasSection('header'))
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        @isset($headerSlot)
-                            {{ $headerSlot }}
-                        @endisset
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-gray-100">
+        @include('layouts.navigation')
 
-                        @hasSection('header')
-                            @yield('header')
-                        @endif
-                    </div>
-                </header>
-            @endif
+        <!-- Page Heading -->
+        @php
+        // Breeze biasanya mengisi $header lewat component slot.
+        // Untuk Blade layout biasa, izinkan section('header').
+        $headerSlot = $header ?? null;
+        @endphp
 
-            <!-- Page Content -->
-            <main>
-                @if (View::hasSection('content'))
-                    @yield('content')
-                @else
-                    {{-- Fallback untuk penggunaan sebagai Blade Component (<x-app-layout>) --}}
-                    {{ $slot ?? '' }}
+        @if (isset($headerSlot) || View::hasSection('header'))
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                @isset($headerSlot)
+                {{ $headerSlot }}
+                @endisset
+
+                @hasSection('header')
+                @yield('header')
                 @endif
-            </main>
-        </div>
+            </div>
+        </header>
+        @endif
 
-        <!-- chat icon -->
-        
-        <x-chat-widget />
-        
-        <!-- end -->
-         
-    </body>
+        <!-- Page Content -->
+        <main>
+            @if (View::hasSection('content'))
+            @yield('content')
+            @else
+            {{-- Fallback untuk penggunaan sebagai Blade Component (<x-app-layout>) --}}
+            {{ $slot ?? '' }}
+            @endif
+        </main>
+    </div>
+
+    <!-- chat icon -->
+
+    <x-chat-widget />
+    <!-- <x-footer /> -->
+
+    <!-- end -->
+
+</body>
+
 </html>
