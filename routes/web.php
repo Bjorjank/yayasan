@@ -8,15 +8,28 @@ use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ChatController;
 
 // === PUBLIC ===
-Route::get('/', [CampaignController::class,'index'])->name('home');
-Route::get('/campaign/{slug}', [CampaignController::class,'show'])->name('campaign.show');
+Route::get('/', [CampaignController::class, 'index'])->name('home');
+Route::view('/about', 'front.about')->name('about');
+// Guest-facing pages (tanpa controller)
+Route::view('/', 'welcome')->name('home');
+Route::view('/about', 'front.about')->name('about');
+Route::view('/contact', 'front.contact')->name('contact');
+Route::view('/faq', 'front.faq')->name('faq');
+Route::view('/privacy', 'front.privacy')->name('privacy');
+Route::view('/terms', 'front.terms')->name('terms');
+Route::view('/team', 'front.team')->name('team');
+
+// (opsional) halaman hasil donasi — tetap guest & dummy
+Route::view('/donate/success', 'front.donate-success')->name('donate-success');
+Route::view('/donate/failed', 'front.donate-failed')->name('donate-failed');
+Route::get('/campaign/{slug}', [CampaignController::class, 'show'])->name('campaign.show');
 
 // Donasi (harus login)
-Route::post('/donate/{campaign}', [DonationController::class,'createTransaction'])
+Route::post('/donate/{campaign}', [DonationController::class, 'createTransaction'])
     ->middleware('auth')->name('donation.create');
 
 // Webhook pembayaran (public)
-Route::post('/webhooks/midtrans', [PaymentWebhookController::class,'midtrans'])
+Route::post('/webhooks/midtrans', [PaymentWebhookController::class, 'midtrans'])
     ->name('webhooks.midtrans');
 
 // Dashboard (hanya contoh bawaan Breeze)
@@ -31,9 +44,9 @@ Route::middleware('auth')->group(function () {
 });
 
 // === CHAT (must auth) ===
-Route::middleware('auth')->group(function() {
-    Route::get('/chat/room/{room}', [ChatController::class,'room'])->name('chat.room');
-    Route::post('/chat/room/{room}/send', [ChatController::class,'send'])->name('chat.send');
+Route::middleware('auth')->group(function () {
+    Route::get('/chat/room/{room}', [ChatController::class, 'room'])->name('chat.room');
+    Route::post('/chat/room/{room}/send', [ChatController::class, 'send'])->name('chat.send');
     Route::post('/chat/dm/{user}', [ChatController::class, 'dm'])->name('chat.dm');
 
     // NEW: list pengguna untuk DM (JSON)
@@ -50,8 +63,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->group(function () {
     // ... existing chat routes
-    Route::get('/chat/recent', [ChatController::class,'recent'])->name('chat.recent');
+    Route::get('/chat/recent', [ChatController::class, 'recent'])->name('chat.recent');
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
