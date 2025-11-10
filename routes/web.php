@@ -6,7 +6,10 @@ use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Superadmin\DashboardController as SADashboard;
 use App\Models\Campaign;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +64,55 @@ Route::post('/contact', function (\Illuminate\Http\Request $r) {
     return back()->with('ok', 'Pesan terkirim. Terima kasih!');
 })->name('contact.submit');
 
+
+
+Route::middleware(['auth','role:superadmin'])
+    ->prefix('superadmin')
+    ->name('superadmin.')
+    ->group(function () {
+        Route::get('/dashboard', [SADashboard::class, 'index'])->name('dashboard');
+
+        // Campaigns (index kirim $items)
+        Route::get('/campaigns', function () {
+            $items = Campaign::latest()->paginate(15)->withQueryString();
+            return view('superadmin.campaigns.index', compact('items'));
+        })->name('campaigns.index');
+
+        // Create (view statis OK)
+        Route::view('/campaigns/create', 'superadmin.campaigns.create')->name('campaigns.create');
+
+        // Edit (pakai binding agar $campaign tersedia di view)
+        Route::get('/campaigns/{campaign}/edit', function (Campaign $campaign) {
+            return view('superadmin.campaigns.edit', compact('campaign'));
+        })->name('campaigns.edit');
+
+        // Donations (kirim $campaigns + query)
+        Route::get('/donations', function () {
+            $q    = request('q');
+            $sort = request('sort', 'latest');
+
+            $campaigns = Campaign::query()
+                ->when($q, fn($query) =>
+                    $query->where(function ($w) use ($q) {
+                        $w->where('title', 'like', "%{$q}%")
+                          ->orWhere('description', 'like', "%{$q}%")
+                          ->orWhere('category', 'like', "%{$q}%");
+                    })
+                )
+                ->when($sort === 'target_desc', fn($q) => $q->orderByDesc('target_amount'))
+                ->when($sort === 'target_asc',  fn($q) => $q->orderBy('target_amount'))
+                ->when($sort === 'latest',      fn($q) => $q->latest())
+                ->paginate(12)
+                ->withQueryString();
+
+            return view('superadmin.donation.index', compact('campaigns','q','sort'));
+        })->name('donations.index');
+
+        // Lainnya (stub)
+        Route::view('/users',    'superadmin.stub')->name('users.index');
+        Route::view('/settings', 'superadmin.stub')->name('settings');
+    });
+    
 // Campaign detail (slug binding)
 Route::get('/campaign/{campaign:slug}', [CampaignController::class, 'show'])->name('campaign.show');
 
@@ -117,5 +169,6 @@ Route::middleware(['auth', 'role:superadmin|admin'])->group(function () {
     Route::put('/admin/campaigns/{campaign}', [CampaignController::class, 'update'])->name('admin.campaigns.update');
     Route::delete('/admin/campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('admin.campaigns.destroy');
 });
+
 
 require __DIR__ . '/auth.php';
