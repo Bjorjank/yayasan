@@ -10,13 +10,14 @@ use App\Models\Campaign;
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC
+| PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
 
 // Home
 Route::get('/', [CampaignController::class, 'index'])->name('home');
-// routes/web.php
+
+// Halaman donasi (list campaign)
 Route::get('/donation', function (\Illuminate\Http\Request $request) {
     $q = $request->query('q');
     $status = $request->query('status');
@@ -24,10 +25,10 @@ Route::get('/donation', function (\Illuminate\Http\Request $request) {
 
     $campaigns = Campaign::query()
         ->when($q, fn($query) =>
-            $query->where(function($w) use ($q) {
+            $query->where(function ($w) use ($q) {
                 $w->where('title', 'like', "%{$q}%")
-                  ->orWhere('excerpt', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%");
+                    ->orWhere('excerpt', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%");
             })
         )
         ->when($status, fn($query) => $query->where('status', $status))
@@ -40,40 +41,49 @@ Route::get('/donation', function (\Illuminate\Http\Request $request) {
     return view('donation.index', compact('campaigns', 'q', 'status', 'sort'));
 })->name('donation');
 
-Route::view('/about', 'about')->name('about');
-Route::view('/contact', 'contact')->name('contact');
-// (opsional) handle submit:
-Route::post('/contact', function(\Illuminate\Http\Request $r){
-  $data = $r->validate([
-    'name'=>'required', 'email'=>'required|email', 'subject'=>'required', 'message'=>'required'
-  ]);
-  // TODO: kirim email / simpan DB
-  return back()->with('ok','Pesan terkirim. Terima kasih!');
+// Static pages
+Route::view('/about', 'front.about')->name('about');
+Route::view('/contact', 'front.contact')->name('contact');
+Route::view('/faq', 'front.faq')->name('faq');
+Route::view('/privacy', 'front.privacy')->name('privacy');
+Route::view('/terms', 'front.terms')->name('terms');
+Route::view('/team', 'front.team')->name('team');
+
+// Contact form submission (optional)
+Route::post('/contact', function (\Illuminate\Http\Request $r) {
+    $data = $r->validate([
+        'name' => 'required',
+        'email' => 'required|email',
+        'subject' => 'required',
+        'message' => 'required'
+    ]);
+    // TODO: kirim email / simpan DB
+    return back()->with('ok', 'Pesan terkirim. Terima kasih!');
 })->name('contact.submit');
 
-
-
-// Detail campaign (implicit model binding by slug)
-// ⬅️ INI YANG DIPAKAI — jangan pakai /campaign/{slug} lagi
-Route::get('/campaign/{campaign:slug}', [CampaignController::class, 'show'])
-    ->name('campaign.show');
+// Campaign detail (slug binding)
+Route::get('/campaign/{campaign:slug}', [CampaignController::class, 'show'])->name('campaign.show');
 
 // Donasi (login opsional)
 Route::post('/donate/{campaign}', [DonationController::class, 'createTransaction'])
     ->name('donation.create');
 
-// Webhook Midtrans (public, signature diverifikasi di controller)
+// Halaman hasil donasi
+Route::view('/donate/success', 'front.donate-success')->name('donate.success');
+Route::view('/donate/failed', 'front.donate-failed')->name('donate.failed');
+
+// Webhook pembayaran Midtrans (public)
 Route::post('/webhooks/midtrans', [PaymentWebhookController::class, 'midtrans'])
     ->name('webhooks.midtrans');
 
-
 /*
 |--------------------------------------------------------------------------
-| AUTHENTICATED — BREEZE DEFAULTS
+| AUTHENTICATED ROUTES
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 });
 
 Route::middleware('auth')->group(function () {
@@ -84,26 +94,21 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | CHAT (must auth)
+    | CHAT
     |--------------------------------------------------------------------------
     */
     Route::get('/chat/room/{room}', [ChatController::class, 'room'])->name('chat.room');
     Route::post('/chat/room/{room}/send', [ChatController::class, 'send'])->name('chat.send');
     Route::post('/chat/dm/{user}', [ChatController::class, 'dm'])->name('chat.dm');
-
-    // JSON helpers
     Route::get('/chat/users', [ChatController::class, 'users'])->name('chat.users');
     Route::get('/chat/room/{room}/messages', [ChatController::class, 'messages'])->name('chat.messages');
     Route::get('/chat/recent', [ChatController::class, 'recent'])->name('chat.recent');
-
-    // Quick test view (opsional)
     Route::view('/dm-test', 'dm-test')->name('dm.test');
 });
 
-
 /*
 |--------------------------------------------------------------------------
-| ADMIN (role: superadmin|admin)
+| ADMIN ROUTES (role: superadmin|admin)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:superadmin|admin'])->group(function () {

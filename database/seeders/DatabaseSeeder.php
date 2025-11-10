@@ -1,8 +1,11 @@
 <?php
+// database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
 
+
 use App\Models\User;
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,6 +13,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+
         $defaultPassword = 'secret123';
 
         // 1) Seed users dasar
@@ -40,5 +44,16 @@ class DatabaseSeeder extends Seeder
         if (class_exists(\Database\Seeders\CampaignSeeder::class)) {
             $this->call(CampaignSeeder::class);
         }
+
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            UserSeeder::class,
+            CampaignSeeder::class,
+            DonationSeeder::class,
+            ChatSeeder::class,
+            MilestoneSeeder::class,
+            WebhookEventSeeder::class,
+        ]);
+
     }
 }
