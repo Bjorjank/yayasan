@@ -3,39 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Donation extends Model
 {
-    use HasFactory;
-
-    protected $guarded = [];
+    protected $fillable = [
+        'campaign_id',
+        'user_id',
+        'donor_name',
+        'donor_email',
+        'amount',
+        'status',          // pending|settlement|expire|cancel
+        'payment_ref',     // order_id / transaction id
+        'payment_method',  // gopay/va/cc/...
+        'paid_at',
+        'payload',         // json (response gateway)
+    ];
 
     protected $casts = [
         'paid_at' => 'datetime',
-        'meta'    => 'array',
+        'payload' => 'array',
     ];
 
-    // Status constants
-    public const STATUS_PENDING    = 'pending';
-    public const STATUS_SETTLEMENT = 'settlement';
-    public const STATUS_EXPIRE     = 'expire';
-    public const STATUS_REFUND     = 'refund';
-
-    /* ---------- Relations ---------- */
-    public function campaign()
-    {
-        return $this->belongsTo(Campaign::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /* ---------- Scopes ---------- */
-    public function scopeSettled($q)
-    {
-        return $q->where('status', self::STATUS_SETTLEMENT);
-    }
+    public function campaign(){ return $this->belongsTo(Campaign::class); }
+    public function user()    { return $this->belongsTo(User::class); }
 }
