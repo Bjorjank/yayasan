@@ -154,7 +154,9 @@
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profil') }}
                 </x-responsive-nav-link>
-
+                <x-dropdown-link :href="route('user.donations.dashboard')">
+                            {{ __('donasi saya') }}
+                </x-dropdown-link>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
