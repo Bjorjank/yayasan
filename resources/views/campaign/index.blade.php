@@ -163,47 +163,65 @@
   </section>
 
   {{-- KAMPANYE PILIHAN --}}
-  <section id="campaigns" class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="flex items-end justify-between gap-6">
+
+<div x-data="{ q: @js(request('q')) }">
+
+  {{-- Hero --}}
+  <section class="bg-gradient-to-b from-white to-blue-50/40">
+    <div class="max-w-7xl mx-auto px-6 pt-10 pb-8">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Kampanye Pilihan</h2>
-          <p class="mt-2 text-gray-600">Contoh kartu program (demo image).</p>
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Dukung Kebaikan, Mulai Hari Ini</h1>
+          <p class="mt-3 text-gray-600">
+            Pilih campaign terbaik dan salurkan donasi Anda. Setiap kontribusi berarti.
+          </p>
+
+          <form method="get" class="mt-6 flex gap-2">
+            <input type="text" name="q" x-model="q" placeholder="Cari campaign…"
+                   class="w-full md:w-96 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none">
+            <button class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Cari</button>
+          </form>
         </div>
-        <a href="{{ route('home') }}" class="text-blue-700 hover:text-blue-800 font-medium">Lihat semua</a>
-      </div>
-
-      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach ([1,2,3] as $i)
-        <div class="rounded-2xl overflow-hidden bg-white ring-1 ring-gray-100 shadow-sm hover:shadow-md transition">
-          <div class="aspect-[16/10] w-full overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=1600&auto=format&fit=crop"
-              alt="Campaign {{ $i }}" class="h-full w-full object-cover">
-          </div>
-          <div class="p-5">
-            <h3 class="font-semibold text-gray-900 line-clamp-2">Bantu Pendidikan Anak Pelosok #{{ $i }}</h3>
-            <p class="mt-1 text-sm text-gray-600 line-clamp-2">Penggalangan dana untuk akses buku, seragam, dan beasiswa.</p>
-
-            <div class="mt-4">
-              <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>Terkumpul</span><span>Rp {{ number_format(32000000 + $i*1000000,0,',','.') }}</span>
-              </div>
-              <div class="mt-1 h-2 w-full rounded-full bg-gray-100">
-                <div class="h-2 rounded-full bg-blue-600" style="width: {{ 55 + $i*5 }}%"></div>
-              </div>
-            </div>
-
-            <div class="mt-5 flex items-center gap-3">
-              <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700">Donasi</a>
-              <a href="{{ route('home') }}" class="text-sm text-blue-700 hover:text-blue-800">Detail</a>
+        <div class="hidden md:block">
+          <div class="aspect-[4/3] w-full rounded-3xl bg-white ring-1 ring-gray-200 shadow-sm grid place-items-center">
+            <div class="text-center p-8">
+              <div class="text-5xl">🤝</div>
+              <div class="mt-3 text-gray-700 font-semibold">Bersama, kita bisa.</div>
+              <div class="text-sm text-gray-500">Transparan, aman, dan berdampak.</div>
             </div>
           </div>
         </div>
-        @endforeach
       </div>
     </div>
   </section>
+
+  {{-- Donasi Pilihan --}}
+  <section class="py-8">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <h2 class="text-xl md:text-2xl font-bold text-gray-900">Donasi Pilihan</h2>
+          <p class="text-gray-500 text-sm">Menampilkan {{ $campaigns->count() }} dari {{ $campaigns->total() }} campaign.</p>
+        </div>
+        <div class="text-xs text-gray-500">Diperbarui: {{ now()->format('d M Y H:i') }}</div>
+      </div>
+
+      <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @forelse ($campaigns as $c)
+          <x-campaign-card :campaign="$c" />
+        @empty
+          <div class="col-span-full rounded-2xl ring-1 ring-gray-200 bg-white p-6 text-center text-gray-500">
+            Tidak ada campaign ditemukan.
+          </div>
+        @endforelse
+      </div>
+
+      <div class="mt-6">
+        {{ $campaigns->withQueryString()->links() }}
+      </div>
+    </div>
+  </section>
+</div>
 
   {{-- TESTIMONI (mini slider Alpine) --}}
   <section class="py-16 bg-blue-50/60" x-data="{i:0, items:[

@@ -3,60 +3,56 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Campaign extends Model
 {
-    use HasFactory;
+    protected $table = 'campaigns';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'owner_id',
+        'title',
+        'slug',
+        'target_amount',
+        'deadline_at',
+        'status',
+        'category',
+        'cover_url',
+        'description',
+    ];
 
     protected $casts = [
         'deadline_at' => 'datetime',
+        'target_amount' => 'integer',
     ];
 
-    // Status constants
-    public const STATUS_DRAFT     = 'draft';
-    public const STATUS_PUBLISHED = 'published';
-    public const STATUS_CLOSED    = 'closed';
+    // Relasi
+    public function donations() { return $this->hasMany(Donation::class); }
+    public function owner()     { return $this->belongsTo(User::class, 'owner_id'); }
 
-    /* ---------- Relations ---------- */
-    public function owner()
+    public function getRouteKeyName(): string { return 'slug'; }
+
+    public function scopePublished($q){ return $q->where('status','published'); }
+
+    // Atribut bantu (tetap dipakai bila dibutuhkan di view lain)
+    public function getCollectedAttribute(): int
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return (int) $this->donations()->where('status','settlement')->sum('amount');
     }
 
-    public function donations()
+    public function getProgressPctAttribute(): int
     {
-        return $this->hasMany(Donation::class);
+        $goal = (int) ($this->target_amount ?? 0);
+        if ($goal <= 0) return 0;
+        return min(100, (int) floor($this->collected * 100 / $goal));
     }
 
-    public function milestones()
+    protected static function booted()
     {
-        return $this->hasMany(Milestone::class);
-    }
-
-    public function chatRooms()
-    {
-        return $this->hasMany(ChatRoom::class);
-    }
-
-    /* ---------- Scopes ---------- */
-    public function scopePublished($q)
-    {
-        return $q->where('status', self::STATUS_PUBLISHED);
-    }
-
-    public function getCollectedAmountAttribute(): int
-    {
-        return (int) $this->donations()
-            ->where('status', Donation::STATUS_SETTLEMENT)
-            ->sum('amount');
-    }
-
-    public function getProgressPercentAttribute(): float
-    {
-        $target = max(1, (int) $this->target_amount);
-        return min(100, round(($this->collected_amount / $target) * 100, 2));
+        static::creating(function($m){
+            if (empty($m->slug)) {
+                $m->slug = Str::slug(($m->title ?: Str::random(6)).'-'.Str::lower(Str::random(4)));
+            }
+        });
     }
 }

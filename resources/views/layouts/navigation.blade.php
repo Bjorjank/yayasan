@@ -1,151 +1,251 @@
 {{-- resources/views/layouts/navigation.blade.php --}}
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
+<nav x-data="{ open: false }"
+    class="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
+
+    {{-- Brand accent (top thin gradient bar) --}}
+    <div class="h-[2px] w-full" style="background: linear-gradient(to right, var(--brand-blue), var(--brand-red));"></div>
+
+    {{-- Top bar --}}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('home') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+        <div class="flex items-center justify-between h-16">
 
-                <!-- Navigation Links (Desktop) -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
-                        {{ __('Home') }}
-                    </x-nav-link>
-
-                    {{-- Guest-visible pages --}}
-                    <x-nav-link :href="route('about')" :active="request()->routeIs('about')">
-                        {{ __('About') }}
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('team')" :active="request()->routeIs('team')">
-                        {{ __('Team') }}
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('contact')" :active="request()->routeIs('contact')">
-                        {{ __('Contact') }}
-                    </x-nav-link>
-
-                    @auth
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    @endauth
-                </div>
+            {{-- Logo + Brand --}}
+            <div class="flex items-center gap-2">
+                <a href="{{ route('home') }}" class="flex items-center gap-2 group">
+                    <img src="{{ asset('favicon.ico') }}" alt="Logo"
+                        class="h-9 w-9 rounded-full ring-1 ring-gray-200 group-hover:ring-gray-300 transition">
+                    <span class="font-semibold text-lg tracking-wide text-gray-800">
+                        Yayasan<span style="color: var(--brand-blue)">Kita</span>
+                    </span>
+                </a>
             </div>
 
-            <!-- Settings / Auth -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            {{-- Primary nav (desktop) --}}
+            <div class="hidden md:flex items-center space-x-6">
+                <x-nav-link :href="route('home')" :active="request()->routeIs('home')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-home class="w-5 h-5" />
+                        {{ __('Beranda') }}
+                    </span>
+                </x-nav-link>
+
+                <x-nav-link :href="route('donation')" :active="request()->routeIs('donation')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-currency-dollar class="w-5 h-5" />
+                        {{ __('Donasi') }}
+                    </span>
+                </x-nav-link>
+
+                <x-nav-link :href="route('about')" :active="request()->routeIs('about')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-information-circle class="w-5 h-5" />
+                        {{ __('Tentang') }}
+                    </span>
+                </x-nav-link>
+
+                <x-nav-link :href="route('team')" :active="request()->routeIs('team')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-users class="w-5 h-5" />
+                        {{ __('Tim') }}
+                    </span>
+                </x-nav-link>
+
+                <x-nav-link :href="route('contact')" :active="request()->routeIs('contact')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-envelope class="w-5 h-5" />
+                        {{ __('Kontak') }}
+                    </span>
+                </x-nav-link>
+
+                @auth
+                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-gray-700 hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-rectangle-stack class="w-5 h-5" />
+                        {{ __('Dasbor') }}
+                    </span>
+                </x-nav-link>
+                @endauth
+            </div>
+
+            {{-- Auth (desktop) --}}
+            <div class="hidden md:flex items-center sm:ms-6">
                 @auth
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ auth()->user()->name }}</div>
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
+                        <button
+                            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-blue-600 ring-1 ring-gray-200 hover:ring-gray-300 transition">
+                            <img src="{{ asset('images/avatar-default.png') }}" class="h-6 w-6 rounded-full ring-1 ring-gray-200" alt="avatar">
+                            <span class="max-w-[10rem] truncate">{{ auth()->user()->name }}</span>
+                            <x-heroicon-o-chevron-down class="w-4 h-4" />
                         </button>
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                        <x-dropdown-link :href="route('profile.edit')" class="hover:text-blue-600">
+                            <span class="inline-flex items-center gap-2">
+                                <x-heroicon-o-user class="w-5 h-5" />
+                                {{ __('Profil') }}
+                            </span>
                         </x-dropdown-link>
 
-                        <!-- Logout -->
+                        <x-dropdown-link :href="route('dashboard')" class="hover:text-blue-600">
+                            <span class="inline-flex items-center gap-2">
+                                <x-heroicon-o-rectangle-stack class="w-5 h-5" />
+                                {{ __('Dasbor') }}
+                            </span>
+                        </x-dropdown-link>
+
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
+                                class="hover:text-red-600"
                                 onclick="event.preventDefault(); this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                <span class="inline-flex items-center gap-2">
+                                    <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5" />
+                                    {{ __('Keluar') }}
+                                </span>
                             </x-dropdown-link>
                         </form>
                     </x-slot>
                 </x-dropdown>
-                @endauth
-
-                @guest
+                @else
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-800 text-sm">{{ __('Log in') }}</a>
-                    <a href="{{ route('register') }}" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">{{ __('Register') }}</a>
+                    <a href="{{ route('login') }}"
+                        class="inline-flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium text-sm">
+                        <x-heroicon-o-arrow-right-end-on-rectangle class="w-5 h-5" />
+                        {{ __('Masuk') }}
+                    </a>
+                    <a href="{{ route('register') }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white shadow transition hover:brightness-95"
+                        style="background: linear-gradient(90deg, var(--brand-blue), var(--brand-red));">
+                        <x-heroicon-o-user-plus class="w-5 h-5" />
+                        {{ __('Daftar') }}
+                    </a>
                 </div>
-                @endguest
+                @endauth
             </div>
 
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out" aria-label="Toggle navigation">
+            {{-- Hamburger (mobile) --}}
+            <div class="md:hidden -me-2 flex items-center">
+                <button @click="open = ! open"
+                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none transition"
+                    aria-label="Buka navigasi" :aria-expanded="open">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path :class="{'hidden': open, 'inline-flex': ! open}" class="inline-flex"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open}" class="hidden"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
+
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu (Mobile) -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">
-                {{ __('Home') }}
+    {{-- Mobile menu --}}
+    <div x-cloak
+        :class="{'block': open, 'hidden': ! open}"
+        class="hidden md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg">
+        <div class="pt-2 pb-3 space-y-1 px-4">
+            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-home class="w-5 h-5" />
+                    {{ __('Beranda') }}
+                </span>
             </x-responsive-nav-link>
 
-            {{-- Guest-visible pages --}}
-            <x-responsive-nav-link :href="route('about')" :active="request()->routeIs('about')">
-                {{ __('About') }}
+            <x-responsive-nav-link :href="route('donation')" :active="request()->routeIs('donation')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-currency-dollar class="w-5 h-5" />
+                    {{ __('Donasi') }}
+                </span>
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('team')" :active="request()->routeIs('team')">
-                {{ __('Team') }}
+            <x-responsive-nav-link :href="route('about')" :active="request()->routeIs('about')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-information-circle class="w-5 h-5" />
+                    {{ __('Tentang') }}
+                </span>
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('contact')" :active="request()->routeIs('contact')">
-                {{ __('Contact') }}
+            <x-responsive-nav-link :href="route('team')" :active="request()->routeIs('team')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-users class="w-5 h-5" />
+                    {{ __('Tim') }}
+                </span>
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('contact')" :active="request()->routeIs('contact')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-envelope class="w-5 h-5" />
+                    {{ __('Kontak') }}
+                </span>
             </x-responsive-nav-link>
 
             @auth
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="hover:text-blue-600">
+                <span class="inline-flex items-center gap-2">
+                    <x-heroicon-o-rectangle-stack class="w-5 h-5" />
+                    {{ __('Dasbor') }}
+                </span>
             </x-responsive-nav-link>
             @endauth
         </div>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
+        {{-- Account (mobile) --}}
+        <div class="pt-4 pb-4 border-top border-gray-200 px-4">
             @auth
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ auth()->user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ auth()->user()->email }}</div>
+            <div class="mb-2">
+                <div class="font-medium text-base text-gray-800 truncate">{{ auth()->user()->name }}</div>
+                <div class="font-medium text-sm text-gray-500 truncate">{{ auth()->user()->email }}</div>
             </div>
 
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+            <div class="space-y-1">
+                <x-responsive-nav-link :href="route('profile.edit')" class="hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-user class="w-5 h-5" />
+                        {{ __('Profil') }}
+                    </span>
                 </x-responsive-nav-link>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
+                        class="hover:text-red-600"
                         onclick="event.preventDefault(); this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        <span class="inline-flex items-center gap-2">
+                            <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5" />
+                            {{ __('Keluar') }}
+                        </span>
                     </x-responsive-nav-link>
                 </form>
             </div>
-            @endauth
+            @else
+            <div class="space-y-2">
+                <x-responsive-nav-link :href="route('login')" class="hover:text-blue-600">
+                    <span class="inline-flex items-center gap-2">
+                        <x-heroicon-o-arrow-right-end-on-rectangle class="w-5 h-5" />
+                        {{ __('Masuk') }}
+                    </span>
+                </x-responsive-nav-link>
 
-            @guest
-            <div class="px-4">
-                <a href="{{ route('login') }}" class="block py-2 text-gray-700">{{ __('Log in') }}</a>
-                <a href="{{ route('register') }}" class="block py-2 text-blue-600">{{ __('Register') }}</a>
+                <a href="{{ route('register') }}"
+                    class="inline-flex items-center justify-center w-full px-4 py-2 rounded-lg text-sm font-medium text-white hover:brightness-95"
+                    style="background: linear-gradient(90deg, var(--brand-blue), var(--brand-red));">
+                    <x-heroicon-o-user-plus class="w-5 h-5 mr-2" />
+                    {{ __('Daftar') }}
+                </a>
             </div>
-            @endguest
+            @endauth
         </div>
     </div>
 </nav>
+
+{{-- Prevent flash before Alpine mounts --}}
+<style>
+    [x-cloak] {
+        display: none !important
+    }
+</style>
