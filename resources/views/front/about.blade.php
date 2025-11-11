@@ -1,30 +1,43 @@
+{{-- resources/views/front/about.blade.php --}}
 <x-app-layout>
     {{-- ===== HERO ===== --}}
-    <section class="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white">
-        <div class="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full blur-3xl bg-blue-200/40"></div>
-        <div class="absolute -bottom-24 -left-24 w-[420px] h-[420px] rounded-full blur-3xl bg-indigo-200/40"></div>
+    <section class="relative overflow-hidden bg-white">
+        {{-- Aksen lembut tanpa gradient besar: lingkaran blur biru & merah --}}
+        <div class="pointer-events-none absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full blur-3xl bg-brand-blue/10"></div>
+        <div class="pointer-events-none absolute -bottom-24 -left-24 w-[420px] h-[420px] rounded-full blur-3xl bg-brand-red/10"></div>
 
-        <div class="mx-auto max-w-7xl px-4 pt-10 pb-6">
+        {{-- Bar aksen brand di atas --}}
+        <div class="w-full">
+            <div class="h-[2px] w-full bg-brand-blue"></div>
+            <div class="h-[2px] w-full bg-brand-red"></div>
+        </div>
+
+        <div class="mx-auto max-w-7xl px-6 pt-10 pb-6">
             <div class="grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                    <span class="inline-flex items-center gap-2 rounded-full bg-blue-600/10 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-medium text-brand-blue ring-1 ring-brand-blue/20">
+                        <x-heroicon-o-building-library class="w-4 h-4" />
                         Tentang Yayasan
                     </span>
+
                     <h1 class="mt-4 text-4xl md:text-5xl font-bold leading-tight text-gray-900">
-                        Bergerak <span class="text-blue-600">Memberi Dampak</span>
+                        Bergerak <span class="text-brand-blue">Memberi Dampak</span>
                     </h1>
                     <p class="mt-4 text-gray-600">
                         Fokus di pendidikan, kemanusiaan, dan pemberdayaan ekonomi. Transparansi & akuntabilitas adalah prioritas kami.
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-3">
-                        <a href="#" class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-white font-medium shadow hover:bg-blue-700 transition">
+                        {{-- Tombol utama = MERAH --}}
+                        <a href="{{ route('donation') }}"
+                            class="inline-flex items-center rounded-lg bg-brand-red px-4 py-2.5 text-white font-medium shadow hover:brightness-95 transition">
+                            <x-heroicon-o-rocket-launch class="w-5 h-5 mr-2 text-white/90" />
                             Lihat Program
-                            <svg class="ml-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M13.5 4.5a.75.75 0 0 0 0 1.5h4.19l-9.72 9.72a.75.75 0 1 0 1.06 1.06l9.72-9.72V13.5a.75.75 0 0 0 1.5 0v-9h-9Z" />
-                            </svg>
                         </a>
-                        <a href="#visi-misi" class="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-gray-700 font-medium ring-1 ring-gray-200 hover:bg-gray-50 transition">
+                        {{-- Tombol sekunder = putih outline biru --}}
+                        <a href="#visi-misi"
+                            class="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-gray-700 font-medium ring-1 ring-brand-blue/30 hover:bg-gray-50 transition">
+                            <x-heroicon-o-eye class="w-5 h-5 mr-2 text-brand-blue" />
                             Visi & Misi
                         </a>
                     </div>
@@ -32,14 +45,23 @@
                     {{-- Stats counters --}}
                     <div class="mt-8 grid grid-cols-3 gap-3">
                         <div class="rounded-xl bg-white ring-1 ring-gray-100 p-4 text-center shadow-sm">
+                            <div class="mx-auto mb-1 h-8 w-8 rounded-full bg-brand-blue/10 grid place-items-center">
+                                <x-heroicon-o-users class="w-5 h-5 text-brand-blue" />
+                            </div>
                             <div class="text-2xl font-bold text-gray-900 counter" data-target="250">0</div>
                             <div class="text-xs text-gray-500">Penerima</div>
                         </div>
                         <div class="rounded-xl bg-white ring-1 ring-gray-100 p-4 text-center shadow-sm">
+                            <div class="mx-auto mb-1 h-8 w-8 rounded-full bg-brand-red/10 grid place-items-center">
+                                <x-heroicon-o-hand-thumb-up class="w-5 h-5 text-brand-red" />
+                            </div>
                             <div class="text-2xl font-bold text-gray-900 counter" data-target="120">0</div>
                             <div class="text-xs text-gray-500">Relawan</div>
                         </div>
                         <div class="rounded-xl bg-white ring-1 ring-gray-100 p-4 text-center shadow-sm">
+                            <div class="mx-auto mb-1 h-8 w-8 rounded-full bg-brand-blue/10 grid place-items-center">
+                                <x-heroicon-o-rectangle-stack class="w-5 h-5 text-brand-blue" />
+                            </div>
                             <div class="text-2xl font-bold text-gray-900 counter" data-target="15">0</div>
                             <div class="text-xs text-gray-500">Program</div>
                         </div>
@@ -68,13 +90,33 @@
     </section>
 
     {{-- ===== VISI & MISI (Tab Interaktif) ===== --}}
-    <section id="visi-misi" class="mx-auto max-w-7xl px-4 py-10">
-        <div class="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm">
+    <section id="visi-misi" class="mx-auto max-w-7xl px-6 py-10">
+        <div class="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm overflow-hidden">
             <div class="border-b px-4">
                 <nav class="flex gap-4" role="tablist">
-                    <button data-tab="visi" class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600 aria-selected:border-blue-600 aria-selected:text-blue-700" aria-selected="true">Visi</button>
-                    <button data-tab="misi" class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600">Misi</button>
-                    <button data-tab="nilai" class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600">Nilai</button>
+                    {{-- Tab aktif = border brand-blue, teks brand-blue --}}
+                    <button data-tab="visi"
+                        class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600 aria-selected:border-brand-blue aria-selected:text-brand-blue"
+                        aria-selected="true">
+                        <span class="inline-flex items-center gap-2">
+                            <x-heroicon-o-light-bulb class="w-5 h-5" />
+                            Visi
+                        </span>
+                    </button>
+                    <button data-tab="misi"
+                        class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600">
+                        <span class="inline-flex items-center gap-2">
+                            <x-heroicon-o-flag class="w-5 h-5" />
+                            Misi
+                        </span>
+                    </button>
+                    <button data-tab="nilai"
+                        class="tab-btn border-b-2 border-transparent py-3 text-sm font-semibold text-gray-600">
+                        <span class="inline-flex items-center gap-2">
+                            <x-heroicon-o-heart class="w-5 h-5" />
+                            Nilai
+                        </span>
+                    </button>
                 </nav>
             </div>
 
@@ -82,8 +124,11 @@
                 {{-- VISI --}}
                 <div class="tab-panel" data-panel="visi">
                     <div class="grid md:grid-cols-2 gap-6 items-start">
-                        <div class="rounded-xl bg-blue-50 p-6 ring-1 ring-blue-100">
-                            <h3 class="text-xl font-semibold">Visi Kami</h3>
+                        <div class="rounded-xl bg-brand-blue/10 p-6 ring-1 ring-brand-blue/20">
+                            <h3 class="text-xl font-semibold flex items-center gap-2">
+                                <x-heroicon-o-sparkles class="w-5 h-5 text-brand-blue" />
+                                Visi Kami
+                            </h3>
                             <p class="mt-3 text-gray-700">
                                 Masyarakat berdaya, sejahtera, dan peduli—didorong oleh pendidikan inklusif,
                                 respon kemanusiaan yang cepat, serta pemberdayaan ekonomi berkelanjutan.
@@ -106,7 +151,9 @@
                             'Transparansi & akuntabilitas melalui pelaporan berkala.',
                             ] as $m)
                             <li class="flex gap-3">
-                                <span class="mt-2 h-2 w-2 rounded-full bg-indigo-500"></span>
+                                <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 rounded-full bg-brand-red/10 ring-1 ring-brand-red/20 items-center justify-center">
+                                    <x-heroicon-o-check class="w-4 h-4 text-brand-red" />
+                                </span>
                                 <span class="text-gray-700">{{ $m }}</span>
                             </li>
                             @endforeach
@@ -126,7 +173,16 @@
                         ['Empati', 'Menempatkan penerima manfaat di pusat keputusan.'],
                         ] as [$title, $desc])
                         <div class="rounded-xl bg-white p-5 ring-1 ring-gray-100 shadow-sm">
-                            <div class="font-semibold">{{ $title }}</div>
+                            <div class="font-semibold flex items-center gap-2">
+                                @if ($title === 'Integritas')
+                                <x-heroicon-o-shield-check class="w-5 h-5 text-brand-blue" />
+                                @elseif ($title === 'Kolaborasi')
+                                <x-heroicon-o-user-group class="w-5 h-5 text-brand-red" />
+                                @else
+                                <x-heroicon-o-hand-raised class="w-5 h-5 text-brand-blue" />
+                                @endif
+                                {{ $title }}
+                            </div>
                             <p class="mt-2 text-sm text-gray-600">{{ $desc }}</p>
                         </div>
                         @endforeach
@@ -137,8 +193,11 @@
     </section>
 
     {{-- ===== GALERI (Grid + Lightbox sederhana) ===== --}}
-    <section class="mx-auto max-w-7xl px-4 py-4">
-        <h3 class="text-lg font-semibold mb-3">Galeri Kegiatan</h3>
+    <section class="mx-auto max-w-7xl px-6 py-4">
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+            <x-heroicon-o-photo class="w-5 h-5 text-brand-blue" />
+            Galeri Kegiatan
+        </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             @php
             $imgs = [
@@ -167,8 +226,11 @@
     </section>
 
     {{-- ===== TIMELINE ===== --}}
-    <section class="mx-auto max-w-7xl px-4 py-8">
-        <h3 class="text-lg font-semibold mb-4">Perjalanan Kami</h3>
+    <section class="mx-auto max-w-7xl px-6 py-8">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <x-heroicon-o-calendar-days class="w-5 h-5 text-brand-blue" />
+            Perjalanan Kami
+        </h3>
         <ol class="relative border-l border-gray-200 ml-2">
             @foreach ([
             ['2023', 'Inisiatif belajar sore untuk anak sekitar.'],
@@ -176,8 +238,10 @@
             ['2025', 'Inkubasi UMKM ibu rumah tangga & ekspansi daerah.'],
             ] as [$year, $text])
             <li class="mb-8 ml-4">
-                <div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-blue-500 ring-4 ring-blue-100"></div>
-                <time class="mb-1 text-sm font-medium text-blue-700">{{ $year }}</time>
+                {{-- Titik timeline: alternating brand-blue / brand-red --}}
+                @php $isEven = ((int)$year % 2) === 0; @endphp
+                <div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full {{ $isEven ? 'bg-brand-red ring-4 ring-brand-red/20' : 'bg-brand-blue ring-4 ring-brand-blue/20' }}"></div>
+                <time class="mb-1 text-sm font-medium {{ $isEven ? 'text-brand-red' : 'text-brand-blue' }}">{{ $year }}</time>
                 <p class="text-gray-700">{{ $text }}</p>
             </li>
             @endforeach
@@ -185,16 +249,29 @@
     </section>
 
     {{-- ===== CTA ===== --}}
-    <section class="mx-auto max-w-7xl px-4 pb-16">
-        <div class="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-white shadow-lg">
+    <section class="mx-auto max-w-7xl px-6 pb-16">
+        <div class="rounded-2xl bg-brand-red px-6 py-8 text-white shadow-lg ring-1 ring-brand-red/30">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h3 class="text-2xl font-semibold">Ayo Berkontribusi</h3>
+                    <h3 class="text-2xl font-semibold flex items-center gap-2">
+                        <x-heroicon-o-megaphone class="w-6 h-6 text-white/90" />
+                        Ayo Berkontribusi
+                    </h3>
                     <p class="text-white/90">Dukungan Anda membantu kami melanjutkan program yang berdampak.</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="#" class="rounded-lg bg-white px-4 py-2.5 text-blue-700 font-semibold shadow hover:bg-blue-50 transition">Lihat Program</a>
-                    <a href="#" class="rounded-lg bg-white/10 px-4 py-2.5 font-semibold ring-1 ring-white/20 hover:bg-white/20 transition">Hubungi Kami</a>
+                    {{-- Sekunder putih = menonjol di atas merah, teks biru brand --}}
+                    <a href="{{ route('donation') }}"
+                        class="rounded-lg bg-white px-4 py-2.5 text-brand-blue font-semibold shadow hover:bg-gray-50 transition inline-flex items-center">
+                        <x-heroicon-o-rectangle-stack class="w-5 h-5 mr-2 text-brand-blue/90" />
+                        Lihat Program
+                    </a>
+                    {{-- Ghost putih tipis --}}
+                    <a href="{{ route('contact') }}"
+                        class="rounded-lg bg-white/10 px-4 py-2.5 font-semibold ring-1 ring-white/30 hover:bg-white/20 transition inline-flex items-center">
+                        <x-heroicon-o-paper-airplane class="w-5 h-5 mr-2 text-white/90" />
+                        Hubungi Kami
+                    </a>
                 </div>
             </div>
         </div>
@@ -238,8 +315,8 @@
                 btns.forEach(b => {
                     const active = b.dataset.tab === name;
                     b.setAttribute('aria-selected', active ? 'true' : 'false');
-                    b.classList.toggle('border-blue-600', active);
-                    b.classList.toggle('text-blue-700', active);
+                    b.classList.toggle('border-brand-blue', active);
+                    b.classList.toggle('text-brand-blue', active);
                 });
                 panels.forEach(p => {
                     p.classList.toggle('hidden', p.dataset.panel !== name);
@@ -259,11 +336,11 @@
                     modal = document.createElement('div');
                     modal.className = 'fixed inset-0 z-50 hidden';
                     modal.innerHTML = `
-            <div class="absolute inset-0 bg-black/70"></div>
-            <div class="relative mx-auto max-w-4xl px-4 py-10 flex h-full items-center justify-center">
-              <img class="max-h-[80vh] w-auto rounded-xl shadow-2xl ring-1 ring-white/10" src="" alt="Preview">
-              <button type="button" class="absolute top-6 right-6 rounded-md bg-white/10 px-3 py-1.5 text-white ring-1 ring-white/20 hover:bg-white/20">Tutup</button>
-            </div>`;
+                        <div class="absolute inset-0 bg-black/70"></div>
+                        <div class="relative mx-auto max-w-4xl px-4 py-10 flex h-full items-center justify-center">
+                            <img class="max-h-[80vh] w-auto rounded-xl shadow-2xl ring-1 ring-white/10" src="" alt="Preview">
+                            <button type="button" class="absolute top-6 right-6 rounded-md bg-white/10 px-3 py-1.5 text-white ring-1 ring-white/20 hover:bg-white/20">Tutup</button>
+                        </div>`;
                     document.body.appendChild(modal);
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal || e.target.tagName === 'BUTTON') modal.classList.add('hidden');
@@ -275,5 +352,7 @@
             buttons.forEach(b => b.addEventListener('click', () => open(b.dataset.lightbox)));
         })();
     </script>
+
+    {{-- Footer global dipanggil dari layout utama, tidak ditambah di sini --}}
     <x-footer />
 </x-app-layout>

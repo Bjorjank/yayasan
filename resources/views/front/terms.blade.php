@@ -39,6 +39,10 @@
     </style>
 
     <section class="bg-white">
+        {{-- Brand bars: Merah → Biru (tanpa gradient) --}}
+        <div class="h-[2px] w-full" style="background-color:#D21F26"></div>
+        <div class="h-[2px] w-full" style="background-color:#145EFC"></div>
+
         <div class="mx-auto max-w-7xl px-6 py-10">
 
             {{-- Breadcrumb --}}
@@ -48,8 +52,10 @@
                 <span class="text-gray-700 font-medium">Syarat & Ketentuan</span>
             </nav>
 
-            {{-- Hero --}}
-            <header class="mt-4 rounded-3xl overflow-hidden ring-1 ring-blue-200 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+            {{-- Hero (solid merah, tanpa gradient) --}}
+            <header
+                class="mt-4 rounded-3xl overflow-hidden ring-1 text-white"
+                style="background-color:#D21F26; box-shadow:0 10px 30px rgba(210,31,38,.15); border-color:rgba(210,31,38,.25)">
                 <div class="relative px-8 py-10 md:px-12 md:py-12">
                     <div class="absolute -right-16 -top-16 h-56 w-56 bg-white/10 rounded-full blur-2xl"></div>
 
@@ -59,24 +65,27 @@
                     </p>
 
                     <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/25">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1"
+                            style="background-color:rgba(255,255,255,.10); border-color:rgba(255,255,255,.25)">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M6 2h12v2H6V2zm6 4a6 6 0 100 12 6 6 0 000-12zM5 20h14v2H5v-2z" />
                             </svg>
-                            Versi Dokumen
-                            <strong class="ml-1 font-semibold">1.0</strong>
+                            Versi Dokumen <strong class="ml-1 font-semibold">1.0</strong>
                         </span>
 
-                        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/25">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1"
+                            style="background-color:rgba(255,255,255,.10); border-color:rgba(255,255,255,.25)">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M19 3H5a2 2 0 00-2 2v14l4-4h12a2 2 0 002-2V5a2 2 0 00-2-2z" />
                             </svg>
                             Terakhir diperbarui:
-                            <time class="font-medium">10 Nov 2025</time>
+                            <time class="font-medium">{{ now()->format('d M Y') }}</time>
                         </span>
 
+                        {{-- Print button: putih → teks biru (sekunder) --}}
                         <button onclick="window.print()" type="button"
-                            class="ml-auto inline-flex items-center gap-2 rounded-xl bg-white text-blue-700 px-4 py-2 font-semibold hover:bg-blue-50 print-hide"
+                            class="ml-auto inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 font-semibold hover:bg-gray-50 print-hide"
+                            style="color:#145EFC"
                             aria-label="Cetak dokumen">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M6 9V2h12v7H6zm0 13v-6h12v6H6zM4 10h16a2 2 0 012 2v4h-4v-4H6v4H2v-4a2 2 0 012-2z" />
@@ -145,11 +154,15 @@
                             </nav>
                         </div>
 
-                        {{-- Help card --}}
-                        <div class="help-card rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 p-5 text-white">
+                        {{-- Help card (solid biru sekunder, tanpa gradient) --}}
+                        <div class="help-card rounded-2xl p-5 text-white" style="background-color:#145EFC">
                             <div class="font-semibold">Butuh bantuan lanjutan?</div>
                             <p class="text-white/90 text-sm">Jika ada yang kurang jelas, hubungi tim kami.</p>
-                            <a href="{{ route('contact') }}" class="mt-3 inline-block rounded-xl bg-white text-blue-700 px-4 py-2 font-semibold hover:bg-blue-50">Hubungi Kami</a>
+                            <a href="{{ route('contact') }}"
+                                class="mt-3 inline-block rounded-xl bg-white px-4 py-2 font-semibold hover:bg-gray-50"
+                                style="color:#145EFC">
+                                Hubungi Kami
+                            </a>
                         </div>
                     </div>
                 </aside>
@@ -167,7 +180,7 @@
                                     class="ml-2 align-middle opacity-0 group-hover:opacity-100 transition"
                                     aria-label="Salin tautan"
                                     onclick="copyLink('#penggunaan-layanan')">
-                                    <svg class="h-4 w-4 inline-block text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg class="h-4 w-4 inline-block" viewBox="0 0 24 24" fill="#145EFC" aria-hidden="true">
                                         <path d="M3 8a5 5 0 015-5h3v2H8a3 3 0 100 6h3v2H8a5 5 0 01-5-5zm13-3h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" />
                                     </svg>
                                 </button>
@@ -181,8 +194,8 @@
                                     class="ml-2 align-middle opacity-0 group-hover:opacity-100 transition"
                                     aria-label="Salin tautan"
                                     onclick="copyLink('#donasi')">
-                                    <svg class="h-4 w-4 inline-block text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                        <path d="M3 8a5 5 0 015-5h3v2H8a3 3 0 100 6h3v2H8a5 5 0 01-5-5zm13-3h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" />
+                                    <svg class="h-4 w-4 inline-block" viewBox="0 0 24 24" fill="#145EFC" aria-hidden="true">
+                                        <path d="M3 8a5 5 0 015-5h3v2H8a3 3 0 100 6h3v2H8a5 5 0 000-10zM16 5h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" />
                                     </svg>
                                 </button>
                             </h2>
@@ -195,7 +208,7 @@
                                     class="ml-2 align-middle opacity-0 group-hover:opacity-100 transition"
                                     aria-label="Salin tautan"
                                     onclick="copyLink('#konten')">
-                                    <svg class="h-4 w-4 inline-block text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg class="h-4 w-4 inline-block" viewBox="0 0 24 24" fill="#145EFC" aria-hidden="true">
                                         <path d="M3 8a5 5 0 015-5h3v2H8a3 3 0 100 6h3v2H8a5 5 0 01-5-5zm13-3h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" />
                                     </svg>
                                 </button>
@@ -209,7 +222,7 @@
                                     class="ml-2 align-middle opacity-0 group-hover:opacity-100 transition"
                                     aria-label="Salin tautan"
                                     onclick="copyLink('#perubahan')">
-                                    <svg class="h-4 w-4 inline-block text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg class="h-4 w-4 inline-block" viewBox="0 0 24 24" fill="#145EFC" aria-hidden="true">
                                         <path d="M3 8a5 5 0 015-5h3v2H8a3 3 0 100 6h3v2H8a5 5 0 01-5-5zm13-3h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" />
                                     </svg>
                                 </button>
@@ -222,9 +235,10 @@
         </div>
     </section>
 
-    {{-- Back to top floating --}}
+    {{-- Back to top floating (biru sekunder) --}}
     <button id="backToTop"
-        class="fixed bottom-6 right-6 z-40 hidden h-11 w-11 rounded-full bg-blue-600 text-white shadow-lg ring-1 ring-blue-300 hover:bg-blue-700"
+        class="fixed bottom-6 right-6 z-40 hidden h-11 w-11 rounded-full text-white shadow-lg ring-1 hover:opacity-95"
+        style="background-color:#145EFC; box-shadow:0 10px 20px rgba(20,94,252,.25)"
         aria-label="Kembali ke atas"
         onclick="window.scrollTo({top:0,behavior:'smooth'})">
         ↑
@@ -301,5 +315,6 @@
             }
         })();
     </script>
+
     <x-footer />
 </x-app-layout>

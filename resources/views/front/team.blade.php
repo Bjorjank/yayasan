@@ -10,29 +10,44 @@
                 <span class="text-gray-700 font-medium">Tim Kami</span>
             </nav>
 
-            {{-- Hero --}}
-            <header class="mt-4 overflow-hidden rounded-3xl ring-1 ring-blue-200 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+            {{-- Hero (solid RED, no gradient) --}}
+            <header
+                class="mt-4 overflow-hidden rounded-3xl text-white ring-1 shadow-sm"
+                style="
+                    background-color:#D21F26;  /* merah dulu */
+                    border-color: rgba(210,31,38,.25);
+                    box-shadow: 0 10px 30px rgba(210,31,38,.18);
+                ">
                 <div class="relative px-8 py-10 md:px-12 md:py-12">
                     <div class="absolute -right-16 -top-16 h-56 w-56 bg-white/10 rounded-full blur-2xl"></div>
+
                     <h1 class="text-3xl md:text-4xl font-bold">Tim Kami</h1>
                     <p class="mt-2 max-w-2xl text-white/90">
                         Kolaborasi pekerja sosial, pendidik, dan profesional untuk mendorong lebih banyak dampak baik.
                     </p>
+
                     <div class="mt-4 flex flex-wrap gap-3 text-sm">
-                        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/25">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M3 12a9 9 0 1118 0A9 9 0 013 12zm8-4h2v6h-2V8zm0 8h2v2h-2v-2z" />
-                            </svg>
+                        <span
+                            class="inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1"
+                            style="background-color: rgba(255,255,255,.10); border-color: rgba(255,255,255,.25)">
+                            <x-heroicon-o-sparkles class="h-4 w-4 text-white" />
                             Terbuka untuk kolaborasi
                         </span>
+
+                        {{-- tombol putih teks MERAH --}}
                         <a href="{{ route('contact') }}"
-                            class="ml-auto inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2 4h20v14H6l-4 4V4z" />
-                            </svg>
+                            class="ml-auto inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 font-semibold hover:bg-gray-50 ring-1 ring-white/70"
+                            style="color:#D21F26">
+                            <x-heroicon-o-envelope class="h-4 w-4" />
                             Hubungi Kami
                         </a>
                     </div>
+                </div>
+
+                {{-- strip aksen (merah lalu biru) --}}
+                <div class="w-full">
+                    <div class="h-[3px] w-full" style="background-color:#D21F26"></div>
+                    <div class="h-[3px] w-full" style="background-color:#145EFC"></div>
                 </div>
             </header>
 
@@ -45,17 +60,14 @@
                         <div class="relative">
                             <input id="teamSearch" type="text"
                                 placeholder="Cari nama atau peran…"
-                                class="w-full rounded-xl border-gray-200 py-2.5 pl-10 pr-10 focus:border-blue-400 focus:ring-blue-400"
+                                class="w-full rounded-xl border-gray-200 py-2.5 pl-11 pr-10 focus:border-[#D21F26] focus:ring-[#D21F26]"
                                 autocomplete="off">
-                            <svg class="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M10 2a8 8 0 105.293 14.293l4.207 4.207 1.414-1.414-4.207-4.207A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z" />
-                            </svg>
+                            <x-heroicon-o-magnifying-glass
+                                class="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                             <button id="teamClear"
                                 class="absolute right-2 top-2 hidden rounded-full p-1 text-gray-500 hover:bg-gray-100"
                                 aria-label="Bersihkan pencarian">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.17 12 2.89 5.71 4.3 4.29l6.29 6.3 6.29-6.3z" />
-                                </svg>
+                                <x-heroicon-o-x-mark class="h-5 w-5" />
                             </button>
                         </div>
                     </div>
@@ -76,16 +88,24 @@
                             @endphp
                             @foreach($filters as [$val,$label])
                             <button type="button"
-                                class="team-filter inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 data-[active=true]:border-blue-200 data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700"
+                                class="team-filter inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
+                                           border-gray-200 bg-white text-gray-700 hover:bg-gray-50
+                                           data-[active=true]:bg-[#D21F2614] data-[active=true]:border-[#D21F2640] data-[active=true]:text-[#D21F26]"
                                 data-role="{{ $val }}"
                                 aria-pressed="{{ $loop->first ? 'true':'false' }}"
                                 {{ $loop->first ? 'data-active=true' : '' }}>
-                                <span class="h-1.5 w-1.5 rounded-full {{ $loop->first ? 'bg-blue-600':'bg-gray-300' }}"></span>
+                                <span class="h-1.5 w-1.5 rounded-full {{ $loop->first ? 'bg-[#D21F26]':'bg-gray-300' }}"></span>
                                 {{ $label }}
                             </button>
                             @endforeach
                         </div>
                     </div>
+                </div>
+
+                {{-- bar aksen (merah lalu biru, no gradient) --}}
+                <div class="mt-4 w-full">
+                    <div class="h-1 w-full rounded-full" style="background-color:#D21F26"></div>
+                    <div class="mt-1 h-1 w-full rounded-full" style="background-color:#145EFC"></div>
                 </div>
             </div>
 
@@ -109,40 +129,41 @@
                     </div>
                     <div class="mt-4">
                         <h3 class="text-lg font-semibold text-gray-900">{{ $m['name'] }}</h3>
-                        <p class="text-sm text-blue-700">{{ $m['role'] }}</p>
+                        {{-- peran pakai BIRU (sekunder) --}}
+                        <p class="text-sm" style="color:#145EFC">{{ $m['role'] }}</p>
                     </div>
                     <div class="mt-4 flex items-center justify-between">
                         <div class="flex gap-2">
-                            <a href="{{ $m['linkedin'] }}" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50" aria-label="LinkedIn {{ $m['name'] }}">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5v16H0V8zm7.5 0h4.8v2.2h.1c.7-1.2 2.4-2.5 5-2.5 5.3 0 6.3 3.5 6.3 8v8.3h-5V16c0-1.9 0-4.3-2.6-4.3-2.6 0-3 2-3 4.1v8.2h-5V8z" />
-                                </svg>
+                            <a href="{{ $m['linkedin'] }}"
+                                class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                                aria-label="LinkedIn {{ $m['name'] }}">
+                                <x-heroicon-o-link class="h-4 w-4" />
                                 LinkedIn
                             </a>
-                            <a href="{{ $m['email'] }}" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50" aria-label="Email {{ $m['name'] }}">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path d="M2 6a2 2 0 012-2h16a2 2 0 012 2v.4l-10 6-10-6V6zm0 2.9l9.4 5.6a1.5 1.5 0 001.2 0L22 8.9V18a2 2 0 01-2 2H4a2 2 0 01-2-2V8.9z" />
-                                </svg>
+                            <a href="{{ $m['email'] }}"
+                                class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                                aria-label="Email {{ $m['name'] }}">
+                                <x-heroicon-o-envelope class="h-4 w-4" />
                                 Email
                             </a>
                         </div>
-                        <a href="#" class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                        {{-- tombol aksi pakai BIRU solid (setelah merah) --}}
+                        <a href="#"
+                            class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
+                            style="background-color:#145EFC">
                             Lihat profil
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M10 17l5-5-5-5v10z" />
-                            </svg>
+                            <x-heroicon-o-arrow-right class="h-3.5 w-3.5" />
                         </a>
                     </div>
                 </article>
                 @endforeach
             </div>
 
-            {{-- Empty state (hidden by default) --}}
+            {{-- Empty state --}}
             <div id="teamEmpty" class="mt-12 hidden rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                <div class="mx-auto h-12 w-12 rounded-full bg-blue-50 text-blue-600 grid place-items-center">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M10 2a8 8 0 105.293 14.293l4.207 4.207-1.414 1.414-4.207-4.207A8 8 0 0010 2z" />
-                    </svg>
+                <div class="mx-auto h-12 w-12 rounded-full grid place-items-center text-white"
+                    style="background-color:#D21F26">
+                    <x-heroicon-o-magnifying-glass class="h-6 w-6 text-white" />
                 </div>
                 <h3 class="mt-4 text-lg font-semibold text-gray-900">Tidak ada hasil</h3>
                 <p class="mt-1 text-gray-600">Coba ubah kata kunci atau filter peran.</p>
@@ -201,7 +222,7 @@
                         b.dataset.active = active ? 'true' : 'false';
                         b.setAttribute('aria-pressed', active ? 'true' : 'false');
                         const dot = b.querySelector('span.h-1.5');
-                        if (dot) dot.className = 'h-1.5 w-1.5 rounded-full ' + (active ? 'bg-blue-600' : 'bg-gray-300');
+                        if (dot) dot.className = 'h-1.5 w-1.5 rounded-full ' + (active ? 'bg-[#D21F26]' : 'bg-gray-300');
                     });
                     apply();
                 });

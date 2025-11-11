@@ -19,9 +19,15 @@ use App\Models\Campaign;
 Route::get('/', [CampaignController::class, 'index'])->name('home');
 
 // Halaman statis guest
+Route::view('/', 'welcome')->name('home');
 Route::view('/about', 'front.about')->name('about');
 Route::view('/contact', 'front.contact')->name('contact');
 Route::view('/team', 'front.team')->name('team');
+Route::view('/privacy', 'front.privacy')->name('privacy');
+Route::view('/terms',   'front.terms')->name('terms');
+Route::view('/faq',   'front.faq')->name('faq');
+Route::view('/donate-success', 'front.donate-success')->name('donate-success');
+Route::view('/donate-failed', 'front.donate-failed')->name('donate-failed');
 
 // Contact (dummy submit)
 Route::post('/contact', function (Request $r) {
