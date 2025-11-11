@@ -12,6 +12,8 @@ class Donation extends Model
         'donor_name',
         'donor_email',
         'amount',
+        'order_id',        // ⬅️ tambahkan
+        'donor_whatsapp',   // ⬅️ baru
         'status',          // pending|settlement|expire|cancel
         'payment_ref',     // order_id / transaction id
         'payment_method',  // gopay/va/cc/...

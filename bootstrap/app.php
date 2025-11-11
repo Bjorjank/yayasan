@@ -22,4 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })
+    // >>> REGISTER SERVICE PROVIDERS DI SINI <<<
+    ->withProviders([
+        // Provider aplikasi standar kamu
+        App\Providers\AppServiceProvider::class,
+
+        // Provider payment modular buatan kita
+        App\Providers\PaymentsServiceProvider::class,
+    ])
     ->create();

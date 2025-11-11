@@ -25,8 +25,7 @@
   {{-- Toast sederhana --}}
   <div class="fixed bottom-4 right-4 z-50 space-y-3" x-cloak x-show="toasts.length">
     <template x-for="t in toasts" :key="t.id">
-      <div x-transition
-           class="max-w-sm rounded-xl ring-1 ring-black/10 shadow-lg p-4 bg-white flex gap-3">
+      <div x-transition class="max-w-sm rounded-xl ring-1 ring-black/10 shadow-lg p-4 bg-white flex gap-3">
         <div class="inline-flex h-8 w-8 items-center justify-center rounded-full"
              :class="t.type==='success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'">
           <span x-text="t.type==='success' ? '✓' : 'i'"></span>
@@ -105,9 +104,10 @@
               @csrf
               <div class="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label class="text-sm font-medium text-gray-700">Nama</label>
-                  <input name="donor_name" required class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"
-                         placeholder="Nama Kamu">
+                  <label class="text-sm font-medium text-gray-700">Nama (opsional)</label>
+                  <input name="donor_name" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"
+                         placeholder="Hamba ALLAH (default)">
+                  <p class="mt-1 text-xs text-gray-500">Kosongkan untuk tampil sebagai <strong>Hamba ALLAH</strong>.</p>
                 </div>
                 <div>
                   <label class="text-sm font-medium text-gray-700">Email (opsional)</label>
@@ -115,20 +115,40 @@
                          placeholder="nama@email.com">
                 </div>
                 <div>
+                  <label class="text-sm font-medium text-gray-700">WhatsApp (opsional)</label>
+                  <input type="tel" name="donor_whatsapp" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"
+                         placeholder="62xxxxxxxxxxx">
+                  <p class="mt-1 text-xs text-gray-500">Contoh: 62812xxxxxxx (angka saja).</p>
+                </div>
+              </div>
+
+              <div class="mt-4 grid md:grid-cols-3 gap-4">
+                <div class="md:col-span-1">
                   <label class="text-sm font-medium text-gray-700">Nominal (Rp)</label>
                   <input type="text" inputmode="numeric" x-model="amountView" @input="formatAmount()"
                          class="mt-1 w-full border rounded-xl px-3 py-2 text-sm" placeholder="cth: 50.000" required>
                   <input type="hidden" name="amount" :value="amountRaw">
                   <p class="mt-1 text-xs text-gray-500">Minimal Rp 1.000</p>
                 </div>
-              </div>
 
-              <div class="mt-4 flex items-center justify-end gap-3">
-                <button type="submit"
-                        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21c-4.97 0-9-3.582-9-8 0-2.656 1.5-5.016 3.938-6.438a1 1 0 0 1 1.125 1.654C6.5 8.109 6 9.5 6 11c0 3.309 2.691 6 6 6s6-2.691 6-6c0-1.5-.5-2.891-1.063-3.784a1 1 0 0 1 1.125-1.654C19.5 7.984 21 10.344 21 13c0 4.418-4.03 8-9 8z"/></svg>
-                  Donasi Sekarang
-                </button>
+                {{-- quick-pick nominal --}}
+                <div class="md:col-span-2 flex flex-wrap gap-2 items-end">
+                  <button type="button" class="px-3 py-2 rounded-xl ring-1 ring-gray-200 hover:bg-gray-50 text-sm"
+                          @click="quick(10000)">10.000</button>
+                  <button type="button" class="px-3 py-2 rounded-xl ring-1 ring-gray-200 hover:bg-gray-50 text-sm"
+                          @click="quick(25000)">25.000</button>
+                  <button type="button" class="px-3 py-2 rounded-xl ring-1 ring-gray-200 hover:bg-gray-50 text-sm"
+                          @click="quick(50000)">50.000</button>
+                  <button type="button" class="px-3 py-2 rounded-xl ring-1 ring-gray-200 hover:bg-gray-50 text-sm"
+                          @click="quick(100000)">100.000</button>
+                  <div class="ml-auto">
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21c-4.97 0-9-3.582-9-8 0-2.656 1.5-5.016 3.938-6.438a1 1 0 0 1 1.125 1.654C6.5 8.109 6 9.5 6 11c0 3.309 2.691 6 6 6s6-2.691 6-6c0-1.5-.5-2.891-1.063-3.784a1 1 0 0 1 1.125-1.654C19.5 7.984 21 10.344 21 13c0 4.418-4.03 8-9 8z"/></svg>
+                      Donasi Sekarang
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
           @else
@@ -137,7 +157,7 @@
             </div>
           @endif
 
-          {{-- Instruksi pembayaran (jika Midtrans aktif) --}}
+          {{-- Instruksi pembayaran (jika ada) --}}
           @if (session('payinfo'))
             @php $pi = session('payinfo'); @endphp
             <div class="mt-6 rounded-xl bg-blue-50 ring-1 ring-blue-200 p-4">
@@ -221,6 +241,12 @@ document.addEventListener('alpine:init', () => {
       const raw = this._strip(this.amountView);
       this.amountRaw  = raw;
       this.amountView = this._fmtDots(raw);
+    },
+
+    quick(n){
+      const s = String(n);
+      this.amountRaw  = s;
+      this.amountView = this._fmtDots(s);
     },
 
     beforeSubmit(e){

@@ -2,7 +2,7 @@
   $items = [
     ['name'=>'Overview','route'=>route('superadmin.dashboard'),'active'=>request()->routeIs('superadmin.dashboard')],
     ['name'=>'Campaigns','route'=>route('superadmin.campaigns.index'),'active'=>request()->routeIs('superadmin.campaigns.*')],
-    ['name'=>'Donations','route'=>route('superadmin.donations.index'),'active'=>request()->routeIs('superadmin.donations.*')],
+    ['name'=>'Donations','route'=>route('superadmin.reports.donations'),'active'=>request()->routeIs('superadmin.reports.donations')],
     ['name'=>'Users','route'=>route('superadmin.users.index'),'active'=>request()->routeIs('superadmin.users.*')],
     ['name'=>'Settings','route'=>route('superadmin.settings'),'active'=>request()->routeIs('superadmin.settings')],
   ];

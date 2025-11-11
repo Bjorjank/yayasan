@@ -1,109 +1,87 @@
 <?php
+// app/Http/Controllers/DonationController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\Donation;
 use Illuminate\Http\Request;
-use Throwable;
-
-// Midtrans opsional (jika sudah di-install & env diset)
-use Midtrans\Config as MidConfig;
-use Midtrans\CoreApi;
+use Illuminate\Support\Str;
+use App\Services\Payments\Contracts\PaymentGateway;
 
 class DonationController extends Controller
 {
-    public function createTransaction(Request $r, Campaign $campaign)
+    public function createTransaction(Request $r, Campaign $campaign, PaymentGateway $gateway)
     {
         abort_if($campaign->status !== 'published', 404);
 
         $data = $r->validate([
-            'donor_name'  => 'required|string|max:120',
-            'donor_email' => 'nullable|email|max:160',
-            'amount'      => 'required|integer|min:1000',
+            'donor_name'     => 'nullable|string|max:120',       // nullable → default Hamba ALLAH
+            'donor_email'    => 'nullable|email|max:160',
+            'donor_whatsapp' => 'nullable|string|max:32',
+            'amount'         => 'required|integer|min:1000',
         ]);
 
+        // Default nama donor
+        $donorName = trim((string) ($data['donor_name'] ?? ''));
+        if ($donorName === '') {
+            $donorName = 'Hamba ALLAH';
+        }
+
+        // Generate ORDER ID yang rapi & unik (wajib sebelum dipakai)
+        $orderId = sprintf(
+            'DON-%d-%s-%s',
+            $campaign->id,
+            now()->format('YmdHis'),
+            Str::upper(Str::random(5))
+        );
+
+        // Simpan donasi (status awal pending)
         $donation = Donation::create([
-            'campaign_id' => $campaign->id,
-            'user_id'     => auth()->id(),
-            'donor_name'  => $data['donor_name'],
-            'donor_email' => $data['donor_email'] ?? null,
-            'amount'      => $data['amount'],
-            'status'      => 'pending',
+            'campaign_id'    => $campaign->id,
+            'user_id'        => auth()->id(),
+            'donor_name'     => $donorName,
+            'donor_email'    => $data['donor_email'] ?? null,
+            'donor_whatsapp' => $data['donor_whatsapp'] ?? null,
+            'amount'         => (int) $data['amount'],
+            'status'         => 'pending',
+            'order_id'       => $orderId,
         ]);
 
-        // Jika MIDTRANS belum dikonfigurasi, fallback ke simulasi
-        $serverKey = (string) config('midtrans.server_key', '');
-        $useGateway = strlen($serverKey) > 10;
+        // Buat “transaksi” via gateway aktif (fake gateway kita)
+        $info = $gateway->create($donation);
 
-        if (!$useGateway) {
-            // SIMULASI: tandai settlement langsung supaya progress terlihat
-            $donation->update([
-                'status'         => 'settlement',
-                'payment_ref'    => 'SIM-'.$donation->id,
-                'payment_method' => 'simulation',
-                'paid_at'        => now(),
-                'payload'        => ['simulated' => true],
-            ]);
+        return redirect()->route('donation.checkout', $donation)
+            ->with('ok', 'Donasi dibuat. Ikuti instruksi pembayaran.')
+            ->with('payinfo', $info);
+    }
 
-            return redirect()->route('campaign.show', $campaign)
-                ->with('ok', 'Donasi tersimpan (simulasi). MIDTRANS belum dikonfigurasi.');
+    public function checkout(Donation $donation)
+    {
+        $campaign = $donation->campaign;
+        return view('donation.checkout', compact('donation','campaign'));
+    }
+
+    public function confirm(Request $r, Donation $donation, PaymentGateway $gateway)
+    {
+        $gateway->settle($donation);
+        return redirect()->route('donation.checkout', $donation)
+            ->with('ok', 'Pembayaran dikonfirmasi. Terima kasih!');
+    }
+
+    public function cancel(Donation $donation, PaymentGateway $gateway)
+    {
+        $gateway->cancel($donation);
+        return redirect()->route('donation.checkout', $donation)
+            ->with('ok', 'Transaksi dibatalkan.');
+    }
+
+    public function expire(Donation $donation, PaymentGateway $gateway)
+    {
+        $minutes = (int) (config('payments.drivers.fake.expire_minutes') ?? 60);
+        if ($donation->status === 'pending' && $donation->created_at->addMinutes($minutes)->isPast()) {
+            $gateway->expire($donation);
         }
-
-        // === MIDTRANS AKTIF ===
-        try {
-            MidConfig::$serverKey     = config('midtrans.server_key');
-            MidConfig::$isProduction  = (bool) config('midtrans.is_production', false);
-            MidConfig::$isSanitized   = true;
-            MidConfig::$is3ds         = true;
-
-            $orderId = 'DON-'.$donation->id.'-'.now()->format('YmdHis');
-
-            $params = [
-                'transaction_details' => [
-                    'order_id'     => $orderId,
-                    'gross_amount' => (int) $donation->amount,
-                ],
-                'customer_details' => [
-                    'first_name' => $donation->donor_name,
-                    'email'      => $donation->donor_email,
-                ],
-                'item_details' => [[
-                    'id'       => 'campaign-'.$campaign->id,
-                    'price'    => (int) $donation->amount,
-                    'quantity' => 1,
-                    'name'     => 'Donasi: '.$campaign->title,
-                ]],
-                'callbacks' => [
-                    'finish' => route('campaign.show', $campaign),
-                ],
-            ];
-
-            // contoh: VA BCA; silakan ganti sesuai metode
-            $charge = CoreApi::charge(array_merge($params, [
-                'payment_type'  => 'bank_transfer',
-                'bank_transfer' => ['bank' => 'bca'],
-            ]));
-
-            $donation->update([
-                'payment_ref'    => $orderId,
-                'payment_method' => $charge['payment_type'] ?? 'bank_transfer',
-                'payload'        => $charge,
-            ]);
-
-            return redirect()->route('campaign.show', $campaign)
-                ->with('ok', 'Donasi dibuat. Selesaikan pembayaran sesuai instruksi.')
-                ->with('payinfo', $charge);
-
-        } catch (Throwable $e) {
-            // fallback aman—jangan fatal ketika sandbox error
-            $donation->update([
-                'status'  => 'pending',
-                'payload' => ['error' => true, 'message' => $e->getMessage()],
-            ]);
-
-            return redirect()->route('campaign.show', $campaign)
-                ->with('ok', 'Gagal membuat transaksi Midtrans: '.$e->getMessage());
-        }
+        return back()->with('ok', 'Transaksi diperiksa untuk kedaluwarsa.');
     }
 }

@@ -1,5 +1,5 @@
 {{-- resources/views/admin/campaigns/index.blade.php --}}
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
 <style>[x-cloak]{display:none!important}</style>

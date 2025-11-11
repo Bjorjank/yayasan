@@ -7,7 +7,12 @@ use App\Http\Controllers\DonationController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Superadmin\DashboardController as SADashboard;
+use App\Http\Controllers\Superadmin\DonationReportController as SADonationReport;
+use App\Http\Controllers\Superadmin\UserController as SAUser;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Models\Campaign;
+
 
 
 
@@ -108,11 +113,41 @@ Route::middleware(['auth','role:superadmin'])
             return view('superadmin.donation.index', compact('campaigns','q','sort'));
         })->name('donations.index');
 
+                // Laporan Donasi
+        Route::get('/reports/donations', [SADonationReport::class, 'index'])
+            ->name('reports.donations');
         // Lainnya (stub)
-        Route::view('/users',    'superadmin.stub')->name('users.index');
         Route::view('/settings', 'superadmin.stub')->name('settings');
+
+
     });
     
+
+    
+
+Route::middleware(['auth','role:superadmin|admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+
+        // Laporan donasi (mirip superadmin)
+        Route::get('/reports/donations', [\App\Http\Controllers\Admin\DonationReportController::class, 'index'])
+            ->name('reports.donations');
+
+        // (Opsional) filter by campaign tertentu
+        Route::get('/reports/donations/campaign/{campaign}', [\App\Http\Controllers\Admin\DonationReportController::class, 'byCampaign'])
+            ->name('reports.donations.campaign');
+        
+        // users
+        // users
+        Route::get('/users',               [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}',        [AdminUserController::class, 'show'])->name('users.show');
+        Route::post('/users',              [AdminUserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}',        [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}',     [AdminUserController::class, 'destroy'])->name('users.destroy');
+    });
+
 // Campaign detail (slug binding)
 Route::get('/campaign/{campaign:slug}', [CampaignController::class, 'show'])->name('campaign.show');
 
@@ -169,6 +204,32 @@ Route::middleware(['auth', 'role:superadmin|admin'])->group(function () {
     Route::put('/admin/campaigns/{campaign}', [CampaignController::class, 'update'])->name('admin.campaigns.update');
     Route::delete('/admin/campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('admin.campaigns.destroy');
 });
+
+
+
+// buat donasi (sudah ada dari sebelumnya):
+// Route::post('/donate/{campaign}', [DonationController::class,'createTransaction'])->name('donation.create');
+
+// halaman instruksi pembayaran
+Route::get('/donate/{donation}/checkout', [DonationController::class, 'checkout'])
+    ->name('donation.checkout')
+    ->middleware('auth'); // opsional: kalau mau hanya user login yang bisa lihat
+
+// tombol "Saya sudah bayar" (settlement)
+Route::post('/donate/{donation}/confirm', [DonationController::class, 'confirm'])
+    ->name('donation.confirm')
+    ->middleware('auth'); // opsional
+
+// tombol "Batalkan"
+Route::post('/donate/{donation}/cancel', [DonationController::class, 'cancel'])
+    ->name('donation.cancel')
+    ->middleware('auth'); // opsional
+
+// endpoint untuk menandai expire (bisa dipanggil cron/command)
+Route::post('/donate/{donation}/expire', [DonationController::class, 'expire'])
+    ->name('donation.expire')
+    ->middleware('auth'); // opsional
+
 
 
 require __DIR__ . '/auth.php';
