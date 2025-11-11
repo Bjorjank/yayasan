@@ -12,7 +12,7 @@
             {{-- Logo + Brand --}}
             <div class="flex items-center gap-2">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo"
+                    <img src="{{ asset('favicon.ico') }}" alt="Logo"
                          class="h-9 w-9 rounded-full ring-1 ring-gray-200 group-hover:ring-gray-300 transition">
                     <span class="font-semibold text-lg tracking-wide text-gray-800">
                         Yayasan<span style="color: var(--brand-blue)">Kita</span>

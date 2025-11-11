@@ -30,6 +30,7 @@ use App\Models\Campaign;
 Route::get('/', [CampaignController::class, 'index'])->name('home');
 
 // Halaman statis (guest)
+Route::view('/', 'welcome')->name('home');
 Route::view('/about', 'front.about')->name('about');
 Route::view('/contact', 'front.contact')->name('contact');
 Route::view('/team', 'front.team')->name('team');
