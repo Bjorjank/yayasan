@@ -11,6 +11,7 @@ use App\Http\Controllers\Superadmin\DonationReportController as SADonationReport
 use App\Http\Controllers\Superadmin\UserController as SAUser;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\User\DonationDashboardController;
 use App\Models\Campaign;
 
 
@@ -148,6 +149,24 @@ Route::middleware(['auth','role:superadmin|admin'])
         Route::delete('/users/{user}',     [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 
+// routes/web.php
+
+
+
+// --- GROUP UTAMA USER DASHBOARD ---
+Route::middleware(['auth', 'verified'])
+    ->prefix('user')
+    ->name('user.')
+    ->group(function () {
+        // Dashboard utama user
+        Route::get('/dashboard', fn() => view('dashboard'))
+            ->name('dashboard');
+
+        // Dashboard donasi user
+        Route::get('/dashboard/donations', [DonationDashboardController::class, 'index'])
+            ->name('donations.dashboard');
+    });
+
 // Campaign detail (slug binding)
 Route::get('/campaign/{campaign:slug}', [CampaignController::class, 'show'])->name('campaign.show');
 
@@ -169,9 +188,7 @@ Route::post('/webhooks/midtrans', [PaymentWebhookController::class, 'midtrans'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
-});
+
 
 Route::middleware('auth')->group(function () {
     // Profile

@@ -39,7 +39,7 @@
                 </x-nav-link>
 
                 @auth
-                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                <x-nav-link :href="route('user.dashboard')" :active="request()->routeIs('user.dashboard')">
                     {{ __('Dasbor') }}
                 </x-nav-link>
                 @endauth
@@ -52,7 +52,7 @@
                     <x-slot name="trigger">
                         <button
                             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-blue-700 transition">
-                            <img src="{{ asset('images/avatar-default.png') }}" class="h-6 w-6 rounded-full" alt="avatar">
+                            <!-- <img src="{{ asset('images/avatar-default.png') }}" class="h-6 w-6 rounded-full" alt="avatar"> -->
                             <span class="max-w-[10rem] truncate">{{ auth()->user()->name }}</span>
                             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -65,8 +65,11 @@
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profil') }}
                         </x-dropdown-link>
-                        <x-dropdown-link :href="route('dashboard')">
+                        <x-dropdown-link :href="route('user.dashboard')">
                             {{ __('Dasbor') }}
+                        </x-dropdown-link>
+                        <x-dropdown-link :href="route('user.donations.dashboard')">
+                            {{ __('donasi saya') }}
                         </x-dropdown-link>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -133,7 +136,7 @@
             </x-responsive-nav-link>
 
             @auth
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link :href="route('user.dashboard')" :active="request()->routeIs('user.dashboard')">
                 {{ __('Dasbor') }}
             </x-responsive-nav-link>
             @endauth
