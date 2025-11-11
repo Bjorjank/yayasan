@@ -2,27 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-// Uncomment kalau pakai spatie/laravel-permission
+// Spatie roles/permissions (aktif)
 use Spatie\Permission\Traits\HasRoles;
-
-
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
     /**
-     * Guard yang dipakai Spatie (harus cocok dengan roles/permissions yang kamu buat)
+     * Guard yang dipakai Spatie (harus sesuai dengan guard pada konfigurasi roles/permissions).
      */
     protected string $guard_name = 'web';
 
     /**
-     * Attribut mass assignable.
+     * Atribut mass assignable.
      */
     protected $fillable = [
         'name',
@@ -31,7 +27,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Attribut yang disembunyikan.
+     * Atribut yang disembunyikan saat serialisasi.
      */
     protected $hidden = [
         'password',

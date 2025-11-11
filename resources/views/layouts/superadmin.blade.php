@@ -38,9 +38,9 @@
           </svg>
         </div>
         <div class="h-9 w-9 rounded-full bg-white ring-1 ring-gray-200 grid place-items-center">🔔</div>
-        <div class="h-9 w-9 overflow-hidden rounded-full ring-1 ring-gray-200">
+        <!-- <div class="h-9 w-9 overflow-hidden rounded-full ring-1 ring-gray-200">
           <img src="{{ asset('images/avatar-default.png') }}" class="h-full w-full object-cover" alt="avatar">
-        </div>
+        </div> -->
       </div>
     </div>
   </header>

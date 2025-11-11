@@ -3,20 +3,18 @@
 
 namespace Database\Seeders;
 
-
-use App\Models\User;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Password default untuk akun awal (bisa di-override via .env: SEEDER_DEFAULT_PASSWORD)
+        $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', 'secret123');
 
-        $defaultPassword = 'secret123';
-
-        // 1) Seed users dasar
+        // 1) Seed akun dasar
         $accounts = [
             ['name' => 'Super Admin', 'email' => 'superadmin@yayasan.test'],
             ['name' => 'Admin Satu',  'email' => 'admin1@yayasan.test'],
@@ -30,30 +28,36 @@ class DatabaseSeeder extends Seeder
             User::updateOrCreate(
                 ['email' => $acc['email']],
                 [
-                    'name' => $acc['name'],
-                    'password' => Hash::make($defaultPassword),
+                    'name'              => $acc['name'],
+                    'password'          => Hash::make($defaultPassword),
                     'email_verified_at' => now(),
                 ]
             );
         }
 
-        // 2) Selalu assign roles (WAJIB, jangan conditional)
-        $this->call(RoleSetupSeeder::class);
-
-        // 3) (Opsional) seed campaign dsb.
-        if (class_exists(\Database\Seeders\CampaignSeeder::class)) {
-            $this->call(CampaignSeeder::class);
+        // 2) Set up roles & permissions (wajib). Aman-kan dengan class_exists.
+        if (class_exists(\Database\Seeders\RoleSetupSeeder::class)) {
+            $this->call(RoleSetupSeeder::class);
         }
 
-        $this->call([
-            RolesAndPermissionsSeeder::class,
-            UserSeeder::class,
-            CampaignSeeder::class,
-            DonationSeeder::class,
-            ChatSeeder::class,
-            MilestoneSeeder::class,
-            WebhookEventSeeder::class,
-        ]);
+        // 3) Seeder lain (opsional) — hanya dipanggil jika kelasnya ada.
+        $optionalSeeders = [
+            // utama
+            \Database\Seeders\CampaignSeeder::class,
+            \Database\Seeders\DonationSeeder::class,
+            \Database\Seeders\ChatSeeder::class,
+            \Database\Seeders\MilestoneSeeder::class,
+            \Database\Seeders\WebhookEventSeeder::class,
 
+            // kompatibilitas/legacy (jika masih dipakai di branch lain)
+            \Database\Seeders\RolesAndPermissionsSeeder::class,
+            \Database\Seeders\UserSeeder::class,
+        ];
+
+        foreach ($optionalSeeders as $seeder) {
+            if (class_exists($seeder)) {
+                $this->call($seeder);
+            }
+        }
     }
 }
