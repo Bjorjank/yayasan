@@ -22,33 +22,40 @@ class UserController extends Controller
     // List users + agregasi donasi (sum & count), dengan pencarian & pagination
     public function index(Request $request): View
     {
-        $q = trim((string)$request->query('q', ''));
+        $q = trim((string) $request->query('q', ''));
 
         // Role yang diizinkan untuk assignment (ambil dari Spatie bila ada)
         $roles        = Role::query()->orderBy('name')->pluck('name')->all();
-        $allowedRoles = $roles ?: ['admin','user','loket','superadmin']; // fallback
+        $allowedRoles = $roles ?: ['admin', 'user', 'loket', 'superadmin']; // fallback
+
+        // Subquery agregat aman (tanpa ONLY_FULL_GROUP_BY)
+        $agg = DB::table('donations')
+            ->selectRaw('user_id, SUM(amount) AS donated_sum, COUNT(id) AS donated_cnt')
+            ->where('status', 'settlement')     // penting: di-quote sebagai string
+            ->groupBy('user_id');
 
         $users = User::query()
-            ->leftJoin('donations as d', function($join){
-                $join->on('d.user_id', '=', 'users.id')
-                     ->where('d.status', '=', 'settlement');
-            })
-            ->when($q !== '', function($builder) use ($q) {
-                $builder->where(function($w) use ($q) {
+            ->when($q !== '', function ($builder) use ($q) {
+                $builder->where(function ($w) use ($q) {
                     $w->where('users.name', 'like', "%{$q}%")
-                      ->orWhere('users.email', 'like', "%{$q}%");
+                        ->orWhere('users.email', 'like', "%{$q}%");
                 });
             })
-            ->groupBy('users.id')
-            ->select('users.*')
-            ->selectRaw('COALESCE(SUM(d.amount),0) as donated_sum')
-            ->selectRaw('COUNT(d.id) as donated_cnt')
+            ->leftJoinSub($agg, 'dx', function ($join) {
+                $join->on('dx.user_id', '=', 'users.id');
+            })
+            ->select([
+                'users.*',
+                DB::raw('COALESCE(dx.donated_sum, 0) AS donated_sum'),
+                DB::raw('COALESCE(dx.donated_cnt, 0) AS donated_cnt'),
+            ])
             ->orderByDesc('donated_sum')
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.users.index', compact('users','q','allowedRoles'));
+        return view('admin.users.index', compact('users', 'q', 'allowedRoles'));
     }
+
 
     // Detail user + daftar transaksi (donations)
     public function show(User $user, Request $request): View
@@ -60,7 +67,7 @@ class UserController extends Controller
             ->withQueryString();
 
         $agg = Donation::where('user_id', $user->id)
-            ->where('status','settlement')
+            ->where('status', 'settlement')
             ->selectRaw('COALESCE(SUM(amount),0) as total, COUNT(*) as cnt')
             ->first();
 
@@ -76,20 +83,20 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $roles   = Role::query()->pluck('name')->all();
-        $allowed = $roles ?: ['admin','user','loket','superadmin'];
+        $allowed = $roles ?: ['admin', 'user', 'loket', 'superadmin'];
 
         $v = Validator::make($request->all(), [
-            'name'     => ['required','string','max:120', Rule::unique('users','name')],
-            'email'    => ['required','email','max:160', Rule::unique('users','email')],
-            'password' => ['required','string','min:8','confirmed'],
-            'role'     => ['required','string','in:'.implode(',', $allowed)],
+            'name'     => ['required', 'string', 'max:120', Rule::unique('users', 'name')],
+            'email'    => ['required', 'email', 'max:160', Rule::unique('users', 'email')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role'     => ['required', 'string', 'in:' . implode(',', $allowed)],
         ]);
 
         if ($v->fails()) {
             return back()
                 ->withErrors($v)
                 ->withInput()
-                ->with('form','create');
+                ->with('form', 'create');
         }
 
         $data = $v->validated();
@@ -104,13 +111,13 @@ class UserController extends Controller
                 $user->syncRoles([$data['role']]);
             });
 
-            return back()->with('ok','User berhasil dibuat.');
+            return back()->with('ok', 'User berhasil dibuat.');
         } catch (Throwable $e) {
             report($e);
             return back()
                 ->withInput()
-                ->with('form','create')
-                ->with('err','Terjadi kesalahan saat membuat user. Coba lagi.');
+                ->with('form', 'create')
+                ->with('err', 'Terjadi kesalahan saat membuat user. Coba lagi.');
         }
     }
 
@@ -118,21 +125,21 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $roles   = Role::query()->pluck('name')->all();
-        $allowed = $roles ?: ['admin','user','loket','superadmin'];
+        $allowed = $roles ?: ['admin', 'user', 'loket', 'superadmin'];
 
         $v = Validator::make($request->all(), [
-            'name'     => ['required','string','max:120', Rule::unique('users','name')->ignore($user->id)],
-            'email'    => ['required','email','max:160', Rule::unique('users','email')->ignore($user->id)],
-            'password' => ['nullable','string','min:8','confirmed'],
-            'role'     => ['required','string','in:'.implode(',', $allowed)],
+            'name'     => ['required', 'string', 'max:120', Rule::unique('users', 'name')->ignore($user->id)],
+            'email'    => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'role'     => ['required', 'string', 'in:' . implode(',', $allowed)],
         ]);
 
         if ($v->fails()) {
             return back()
                 ->withErrors($v)
                 ->withInput()
-                ->with('form','edit')
-                ->with('edit_id',$user->id);
+                ->with('form', 'edit')
+                ->with('edit_id', $user->id);
         }
 
         $data = $v->validated();
@@ -148,14 +155,14 @@ class UserController extends Controller
                 $user->syncRoles([$data['role']]);
             });
 
-            return back()->with('ok','User berhasil diupdate.');
+            return back()->with('ok', 'User berhasil diupdate.');
         } catch (Throwable $e) {
             report($e);
             return back()
                 ->withInput()
-                ->with('form','edit')
-                ->with('edit_id',$user->id)
-                ->with('err','Terjadi kesalahan saat mengupdate user. Coba lagi.');
+                ->with('form', 'edit')
+                ->with('edit_id', $user->id)
+                ->with('err', 'Terjadi kesalahan saat mengupdate user. Coba lagi.');
         }
     }
 
@@ -163,22 +170,22 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         if (auth()->id() === $user->id) {
-            return back()->with('err','Tidak bisa menghapus akun Anda sendiri.');
+            return back()->with('err', 'Tidak bisa menghapus akun Anda sendiri.');
         }
 
         if ($user->hasRole('superadmin')) {
             $countSuperadmin = User::role('superadmin')->count();
             if ($countSuperadmin <= 1) {
-                return back()->with('err','Tidak bisa menghapus superadmin terakhir.');
+                return back()->with('err', 'Tidak bisa menghapus superadmin terakhir.');
             }
         }
 
         try {
             $user->delete();
-            return back()->with('ok','User berhasil dihapus.');
+            return back()->with('ok', 'User berhasil dihapus.');
         } catch (Throwable $e) {
             report($e);
-            return back()->with('err','User tidak dapat dihapus karena terkait data lain.');
+            return back()->with('err', 'User tidak dapat dihapus karena terkait data lain.');
         }
     }
 
@@ -196,13 +203,13 @@ class UserController extends Controller
 
         if ($name !== '') {
             $q = User::query()->where('name', $name);
-            if ($ignoreId) $q->where('id','!=',$ignoreId);
+            if ($ignoreId) $q->where('id', '!=', $ignoreId);
             $dupes['name'] = $q->exists();
         }
 
         if ($email !== '') {
             $q = User::query()->where('email', $email);
-            if ($ignoreId) $q->where('id','!=',$ignoreId);
+            if ($ignoreId) $q->where('id', '!=', $ignoreId);
             $dupes['email'] = $q->exists();
         }
 
