@@ -5,8 +5,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Models\User;
 
 class ChatSeeder extends Seeder
 {
@@ -14,92 +16,106 @@ class ChatSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        $campaign = \App\Models\Campaign::where('slug', 'bantuan-pendidikan-anak-dhuafa')->first();
-        $adminId  = \App\Models\User::where('email', 'admin@yayasan.test')->value('id');
-        $donorId  = \App\Models\User::where('email', 'donatur@yayasan.test')->value('id');
+        // --- Pastikan minimal 2 user ada
+        $ensure = [
+            ['name' => 'Super Admin', 'email' => 'superadmin@yayasan.test'],
+            ['name' => 'Admin Satu',  'email' => 'admin1@yayasan.test'],
+        ];
+        $ids = [];
+        foreach ($ensure as $e) {
+            $u = User::firstOrCreate(
+                ['email' => $e['email']],
+                [
+                    'name'              => $e['name'],
+                    'password'          => bcrypt(env('SEEDER_DEFAULT_PASSWORD', 'secret123')),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $ids[] = $u->id;
+        }
+        if (count($ids) < 2) {
+            $u = User::firstOrCreate(
+                ['email' => 'user@yayasan.test'],
+                [
+                    'name'              => 'User',
+                    'password'          => bcrypt(env('SEEDER_DEFAULT_PASSWORD', 'secret123')),
+                    'email_verified_at' => now(),
+                ]
+            );
+            $ids[] = $u->id;
+        }
+        $userA = $ids[0];
+        $userB = $ids[1] ?? $ids[0];
 
-        // Room group untuk campaign
-        $roomId = DB::table('chat_rooms')->insertGetId([
-            'type' => 'group',
-            'campaign_id' => $campaign?->id,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        // --- CHAT ROOMS (kolom dinamis)
+        $roomCols     = Schema::getColumnListing('chat_rooms');
+        $roomNameCol  = collect(['name', 'title', 'label'])->first(fn($c) => in_array($c, $roomCols, true));
+        $hasIsPrivate = in_array('is_private', $roomCols, true);
 
-        // Peserta: admin + donor + beberapa donorX
-        $participants = [$adminId, $donorId];
-        $extra = \App\Models\User::where('email', 'like', 'donor%@yayasan.test')->limit(3)->pluck('id')->all();
-        $participants = array_values(array_unique(array_merge($participants, $extra)));
+        $roomPayload = ['updated_at' => $now];
+        if ($roomNameCol) $roomPayload[$roomNameCol] = 'Koordinasi Yayasan';
+        if ($hasIsPrivate) $roomPayload['is_private'] = false;
 
-        foreach ($participants as $uid) {
-            DB::table('chat_participants')->insert([
-                'room_id' => $roomId,
-                'user_id' => $uid,
-                'last_read_at' => $now->copy()->subMinutes(rand(0, 60)),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+        DB::table('chat_rooms')->updateOrInsert(
+            ['id' => 1],
+            array_merge($roomPayload, ['created_at' => $now])
+        );
+
+        // --- CHAT PARTICIPANTS
+        $partCols = Schema::getColumnListing('chat_participants');
+        // Wajib ada room_id & user_id (kebanyakan skema seperti ini)
+        DB::table('chat_participants')->updateOrInsert(
+            ['room_id' => 1, 'user_id' => $userA],
+            ['last_read_at' => $now, 'created_at' => $now, 'updated_at' => $now]
+        );
+        DB::table('chat_participants')->updateOrInsert(
+            ['room_id' => 1, 'user_id' => $userB],
+            ['last_read_at' => $now, 'created_at' => $now, 'updated_at' => $now]
+        );
+
+        // --- CHAT MESSAGES (deteksi kolom dinamis)
+        $msgCols       = Schema::getColumnListing('chat_messages');
+        $textCol       = collect(['content', 'message', 'body', 'text'])->first(fn($c) => in_array($c, $msgCols, true));
+        $senderIdCol   = collect(['sender_id', 'user_id', 'from_user_id', 'author_id'])->first(fn($c) => in_array($c, $msgCols, true));
+        $roomIdCol     = in_array('room_id', $msgCols, true) ? 'room_id' : null;
+        $hasUuid       = in_array('uuid', $msgCols, true);
+
+        // Jika tidak ada kolom teks atau tidak ada kolom sender id, hentikan agar tidak error
+        if (!$textCol || !$senderIdCol || !$roomIdCol) {
+            // Tidak bisa seed pesan tanpa kolom-kolom penting ini
+            return;
         }
 
-        // Beberapa pesan contoh
         $messages = [
             [
-                'room_id' => $roomId,
-                'sender_id' => $adminId,
-                'message' => 'Halo semuanya, terima kasih atas dukungannya untuk program pendidikan ini.',
-                'file_url' => null,
-                'meta' => json_encode(['type' => 'text']),
-                'created_at' => $now->copy()->subMinutes(50),
-                'updated_at' => $now->copy()->subMinutes(50),
+                $textCol  => 'Halo tim, mari sinkron progres kampanye minggu ini.',
+                'sender'  => $userA,
+                'created' => $now->copy()->subMinutes(5),
             ],
             [
-                'room_id' => $roomId,
-                'sender_id' => $donorId,
-                'message' => 'Saya baru berdonasi. Semoga membantu adik-adik.',
-                'file_url' => null,
-                'meta' => json_encode(['type' => 'text']),
-                'created_at' => $now->copy()->subMinutes(40),
-                'updated_at' => $now->copy()->subMinutes(40),
+                $textCol  => 'Siap, nanti saya update target dan laporan harian.',
+                'sender'  => $userB,
+                'created' => $now->copy()->subMinutes(3),
             ],
             [
-                'room_id' => $roomId,
-                'sender_id' => $adminId,
-                'message' => null,
-                'file_url' => 'https://picsum.photos/seed/rapat/800/400',
-                'meta' => json_encode(['type' => 'image']),
-                'created_at' => $now->copy()->subMinutes(35),
-                'updated_at' => $now->copy()->subMinutes(35),
+                $textCol  => 'Noted. Kita push postingan IG jam 19:00.',
+                'sender'  => $userA,
+                'created' => $now->copy()->subMinute(),
             ],
         ];
 
-        DB::table('chat_messages')->insert($messages);
-
-        // Tambah 1 room direct admin <-> donor
-        $directRoomId = DB::table('chat_rooms')->insertGetId([
-            'type' => 'direct',
-            'campaign_id' => null,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        foreach ([$adminId, $donorId] as $uid) {
-            DB::table('chat_participants')->insert([
-                'room_id' => $directRoomId,
-                'user_id' => $uid,
-                'last_read_at' => $now->copy()->subMinutes(rand(0, 20)),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+        foreach ($messages as $m) {
+            $payload = [
+                $textCol         => $m[$textCol],
+                $senderIdCol     => $m['sender'],
+                $roomIdCol       => 1,
+                'created_at'     => $m['created'],
+                'updated_at'     => $m['created'],
+            ];
+            if ($hasUuid) {
+                $payload['uuid'] = (string) Str::uuid();
+            }
+            DB::table('chat_messages')->insert($payload);
         }
-
-        DB::table('chat_messages')->insert([
-            'room_id' => $directRoomId,
-            'sender_id' => $donorId,
-            'message' => 'Halo admin, saya ingin konfirmasi donasi saya sudah masuk?',
-            'file_url' => null,
-            'meta' => json_encode(['type' => 'text']),
-            'created_at' => $now->copy()->subMinutes(10),
-            'updated_at' => $now->copy()->subMinutes(10),
-        ]);
     }
 }

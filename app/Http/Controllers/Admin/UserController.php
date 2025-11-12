@@ -14,32 +14,35 @@ class UserController extends Controller
     // List users + agregasi donasi (sum & count), dengan pencarian & pagination
     public function index(Request $request)
     {
-        $q = trim((string)$request->query('q', ''));
+        $q = trim((string) $request->query('q', ''));
 
         // Role yang diizinkan untuk assignment (ambil dari Spatie bila ada)
         $roles = Role::query()->orderBy('name')->pluck('name')->all();
-        $allowedRoles = $roles ?: ['admin','user','loket','superadmin']; // fallback
+        $allowedRoles = $roles ?: ['admin', 'user', 'loket', 'superadmin']; // fallback
 
         $users = User::query()
-            ->leftJoin('donations as d', function($join){
-                $join->on('d.user_id', '=', 'users.id')
-                     ->where('d.status', '=', 'settlement');
-            })
-            ->when($q !== '', function($builder) use ($q) {
-                $builder->where(function($w) use ($q) {
-                    $w->where('users.name', 'like', "%{$q}%")
-                      ->orWhere('users.email', 'like', "%{$q}%");
+            ->when($q !== '', function ($qb) use ($q) {
+                $qb->where(function ($w) use ($q) {
+                    $w->where('name', 'like', "%{$q}%")
+                        ->orWhere('email', 'like', "%{$q}%");
                 });
             })
-            ->groupBy('users.id')
-            ->select('users.*')
-            ->selectRaw('COALESCE(SUM(d.amount),0) as donated_sum')
-            ->selectRaw('COUNT(d.id) as donated_cnt')
-            ->orderByDesc('donated_sum')
+            // Agregasi aman per-row (tanpa GROUP BY users.*)
+            ->withSum(['donations as donated_sum' => function ($d) {
+                $d->where('status', 'settlement');
+            }], 'amount')
+            ->withCount(['donations as donated_cnt' => function ($d) {
+                $d->where('status', 'settlement');
+            }])
+            ->orderByRaw('COALESCE(donated_sum, 0) DESC')
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.users.index', compact('users','q','allowedRoles'));
+        return view('admin.users.index', [
+            'users'        => $users,
+            'q'            => $q,
+            'allowedRoles' => $allowedRoles,
+        ]);
     }
 
     // Detail user + daftar transaksi (donations)
