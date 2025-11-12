@@ -1,23 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Donation;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Throwable;
 
 class UserController extends Controller
 {
     // List users + agregasi donasi (sum & count), dengan pencarian & pagination
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $q = trim((string)$request->query('q', ''));
 
         // Role yang diizinkan untuk assignment (ambil dari Spatie bila ada)
-        $roles = Role::query()->orderBy('name')->pluck('name')->all();
+        $roles        = Role::query()->orderBy('name')->pluck('name')->all();
         $allowedRoles = $roles ?: ['admin','user','loket','superadmin']; // fallback
 
         $users = User::query()
@@ -43,7 +51,7 @@ class UserController extends Controller
     }
 
     // Detail user + daftar transaksi (donations)
-    public function show(User $user, Request $request)
+    public function show(User $user, Request $request): View
     {
         $donations = Donation::with(['campaign:id,title,slug'])
             ->where('user_id', $user->id)
@@ -65,56 +73,94 @@ class UserController extends Controller
     }
 
     // Create user (modal)
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $roles = Role::query()->pluck('name')->all();
+        $roles   = Role::query()->pluck('name')->all();
         $allowed = $roles ?: ['admin','user','loket','superadmin'];
 
-        $data = $request->validate([
-            'name'     => 'required|string|max:120',
-            'email'    => 'required|email|max:160|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role'     => 'required|string|in:'.implode(',', $allowed),
+        $v = Validator::make($request->all(), [
+            'name'     => ['required','string','max:120', Rule::unique('users','name')],
+            'email'    => ['required','email','max:160', Rule::unique('users','email')],
+            'password' => ['required','string','min:8','confirmed'],
+            'role'     => ['required','string','in:'.implode(',', $allowed)],
         ]);
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        if ($v->fails()) {
+            return back()
+                ->withErrors($v)
+                ->withInput()
+                ->with('form','create');
+        }
 
-        $user->syncRoles([$data['role']]);
+        $data = $v->validated();
 
-        return back()->with('ok','User berhasil dibuat.');
+        try {
+            DB::transaction(function () use ($data) {
+                $user = User::create([
+                    'name'     => $data['name'],
+                    'email'    => $data['email'],
+                    'password' => Hash::make($data['password']),
+                ]);
+                $user->syncRoles([$data['role']]);
+            });
+
+            return back()->with('ok','User berhasil dibuat.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()
+                ->withInput()
+                ->with('form','create')
+                ->with('err','Terjadi kesalahan saat membuat user. Coba lagi.');
+        }
     }
 
     // Update user (modal)
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user): RedirectResponse
     {
-        $roles = Role::query()->pluck('name')->all();
+        $roles   = Role::query()->pluck('name')->all();
         $allowed = $roles ?: ['admin','user','loket','superadmin'];
 
-        $data = $request->validate([
-            'name'     => 'required|string|max:120',
-            'email'    => 'required|email|max:160|unique:users,email,'.$user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'role'     => 'required|string|in:'.implode(',', $allowed),
+        $v = Validator::make($request->all(), [
+            'name'     => ['required','string','max:120', Rule::unique('users','name')->ignore($user->id)],
+            'email'    => ['required','email','max:160', Rule::unique('users','email')->ignore($user->id)],
+            'password' => ['nullable','string','min:8','confirmed'],
+            'role'     => ['required','string','in:'.implode(',', $allowed)],
         ]);
 
-        $user->name  = $data['name'];
-        $user->email = $data['email'];
-        if (!empty($data['password'])) {
-            $user->password = Hash::make($data['password']);
+        if ($v->fails()) {
+            return back()
+                ->withErrors($v)
+                ->withInput()
+                ->with('form','edit')
+                ->with('edit_id',$user->id);
         }
-        $user->save();
 
-        $user->syncRoles([$data['role']]);
+        $data = $v->validated();
 
-        return back()->with('ok','User berhasil diupdate.');
+        try {
+            DB::transaction(function () use ($user, $data) {
+                $user->name  = $data['name'];
+                $user->email = $data['email'];
+                if (!empty($data['password'])) {
+                    $user->password = Hash::make($data['password']);
+                }
+                $user->save();
+                $user->syncRoles([$data['role']]);
+            });
+
+            return back()->with('ok','User berhasil diupdate.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()
+                ->withInput()
+                ->with('form','edit')
+                ->with('edit_id',$user->id)
+                ->with('err','Terjadi kesalahan saat mengupdate user. Coba lagi.');
+        }
     }
 
     // Delete user (modal konfirmasi)
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
         if (auth()->id() === $user->id) {
             return back()->with('err','Tidak bisa menghapus akun Anda sendiri.');
@@ -127,7 +173,39 @@ class UserController extends Controller
             }
         }
 
-        $user->delete();
-        return back()->with('ok','User berhasil dihapus.');
+        try {
+            $user->delete();
+            return back()->with('ok','User berhasil dihapus.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()->with('err','User tidak dapat dihapus karena terkait data lain.');
+        }
+    }
+
+    /**
+     * AJAX pre-check duplikat (name/email), dukung ignore_id untuk edit.
+     * GET /admin/users/check-unique?name=...&email=...&ignore_id=123
+     */
+    public function checkUnique(Request $request)
+    {
+        $name     = trim((string) $request->query('name', ''));
+        $email    = trim((string) $request->query('email', ''));
+        $ignoreId = (int) $request->query('ignore_id', 0);
+
+        $dupes = ['name' => false, 'email' => false];
+
+        if ($name !== '') {
+            $q = User::query()->where('name', $name);
+            if ($ignoreId) $q->where('id','!=',$ignoreId);
+            $dupes['name'] = $q->exists();
+        }
+
+        if ($email !== '') {
+            $q = User::query()->where('email', $email);
+            if ($ignoreId) $q->where('id','!=',$ignoreId);
+            $dupes['email'] = $q->exists();
+        }
+
+        return response()->json(['dupes' => $dupes]);
     }
 }

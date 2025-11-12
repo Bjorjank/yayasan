@@ -199,6 +199,9 @@ Route::middleware(['auth','role:superadmin|admin'])
         Route::post('/users',          [AdminUserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}',    [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+        Route::get('/users/check-unique', [\App\Http\Controllers\Admin\UserController::class, 'checkUnique'])
+        ->name('users.check-unique');
     });
 
 /*

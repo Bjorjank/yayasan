@@ -8,18 +8,18 @@ use App\Models\User;
 use App\Models\Donation;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Throwable;
 
 final class UserController extends Controller
 {
     /**
      * List users + agregasi donasi (sum & count), dengan pencarian.
-     *
-     * @param  Request  $request
-     * @return View
      */
     public function index(Request $request): View
     {
@@ -56,10 +56,6 @@ final class UserController extends Controller
 
     /**
      * Detail user + daftar transaksi.
-     *
-     * @param  User     $user
-     * @param  Request  $request
-     * @return View
      */
     public function show(User $user, Request $request): View
     {
@@ -84,9 +80,6 @@ final class UserController extends Controller
 
     /**
      * Create user.
-     *
-     * @param  Request  $request
-     * @return RedirectResponse
      */
     public function store(Request $request): RedirectResponse
     {
@@ -94,8 +87,8 @@ final class UserController extends Controller
         $allowed = $roles ?: ['superadmin','admin','user','loket'];
 
         $v = Validator::make($request->all(), [
-            'name'     => ['required','string','max:120','unique:users,name'],
-            'email'    => ['required','email','max:160','unique:users,email'],
+            'name'     => ['required','string','max:120', Rule::unique('users','name')],
+            'email'    => ['required','email','max:160', Rule::unique('users','email')],
             'password' => ['required','string','min:8','confirmed'],
             'role'     => ['required','string','in:'.implode(',', $allowed)],
         ]);
@@ -104,28 +97,33 @@ final class UserController extends Controller
             return back()
                 ->withErrors($v)
                 ->withInput()
-                ->with('form', 'create'); // agar modal create bisa auto-terbuka kembali
+                ->with('form', 'create'); // biar modal create bisa dibuka lagi
         }
 
         $data = $v->validated();
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        try {
+            DB::transaction(function () use ($data) {
+                $user = User::create([
+                    'name'     => $data['name'],
+                    'email'    => $data['email'],
+                    'password' => Hash::make($data['password']),
+                ]);
+                $user->syncRoles([$data['role']]);
+            });
 
-        $user->syncRoles([$data['role']]);
-
-        return back()->with('ok', 'User berhasil dibuat.');
+            return back()->with('ok', 'User berhasil dibuat.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()
+                ->withInput()
+                ->with('form', 'create')
+                ->with('err', 'Terjadi kesalahan saat membuat user. Coba lagi.');
+        }
     }
 
     /**
      * Update user (abaikan dirinya sendiri pada aturan unique).
-     *
-     * @param  Request  $request
-     * @param  User     $user
-     * @return RedirectResponse
      */
     public function update(Request $request, User $user): RedirectResponse
     {
@@ -133,8 +131,8 @@ final class UserController extends Controller
         $allowed = $roles ?: ['superadmin','admin','user','loket'];
 
         $v = Validator::make($request->all(), [
-            'name'     => ['required','string','max:120','unique:users,name,'.$user->id],
-            'email'    => ['required','email','max:160','unique:users,email,'.$user->id],
+            'name'     => ['required','string','max:120', Rule::unique('users','name')->ignore($user->id)],
+            'email'    => ['required','email','max:160', Rule::unique('users','email')->ignore($user->id)],
             'password' => ['nullable','string','min:8','confirmed'],
             'role'     => ['required','string','in:'.implode(',', $allowed)],
         ]);
@@ -149,23 +147,30 @@ final class UserController extends Controller
 
         $data = $v->validated();
 
-        $user->name  = $data['name'];
-        $user->email = $data['email'];
-        if (!empty($data['password'])) {
-            $user->password = Hash::make($data['password']);
+        try {
+            DB::transaction(function () use ($user, $data) {
+                $user->name  = $data['name'];
+                $user->email = $data['email'];
+                if (!empty($data['password'])) {
+                    $user->password = Hash::make($data['password']);
+                }
+                $user->save();
+                $user->syncRoles([$data['role']]);
+            });
+
+            return back()->with('ok', 'User berhasil diupdate.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()
+                ->withInput()
+                ->with('form', 'edit')
+                ->with('edit_id', $user->id)
+                ->with('err', 'Terjadi kesalahan saat mengupdate user. Coba lagi.');
         }
-        $user->save();
-
-        $user->syncRoles([$data['role']]);
-
-        return back()->with('ok', 'User berhasil diupdate.');
     }
 
     /**
      * Hapus user (cegah hapus diri sendiri & superadmin terakhir).
-     *
-     * @param  User  $user
-     * @return RedirectResponse
      */
     public function destroy(User $user): RedirectResponse
     {
@@ -180,17 +185,18 @@ final class UserController extends Controller
             }
         }
 
-        $user->delete();
-
-        return back()->with('ok', 'User berhasil dihapus.');
+        try {
+            $user->delete();
+            return back()->with('ok', 'User berhasil dihapus.');
+        } catch (Throwable $e) {
+            report($e);
+            return back()->with('err', 'User tidak dapat dihapus karena terkait data lain.');
+        }
     }
 
     /**
      * AJAX pre-check duplikat (name/email), dukung ignore_id untuk edit.
      * GET /superadmin/users/check-unique?name=...&email=...&ignore_id=123
-     *
-     * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function checkUnique(Request $request)
     {
@@ -202,17 +208,13 @@ final class UserController extends Controller
 
         if ($name !== '') {
             $q = User::query()->where('name', $name);
-            if ($ignoreId) {
-                $q->where('id', '!=', $ignoreId);
-            }
+            if ($ignoreId) $q->where('id', '!=', $ignoreId);
             $dupes['name'] = $q->exists();
         }
 
         if ($email !== '') {
             $q = User::query()->where('email', $email);
-            if ($ignoreId) {
-                $q->where('id', '!=', $ignoreId);
-            }
+            if ($ignoreId) $q->where('id', '!=', $ignoreId);
             $dupes['email'] = $q->exists();
         }
 
