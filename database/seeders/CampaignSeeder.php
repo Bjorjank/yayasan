@@ -1,80 +1,52 @@
 <?php
-<<<<<<< HEAD
 
 // database/seeders/CampaignSeeder.php
-
-=======
-// database/seeders/CampaignSeeder.php
->>>>>>> 10a8ce5777a2f374a49a98f771a5561a50589a46
 
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-<<<<<<< HEAD
-
-use App\Models\Campaign;
-use App\Models\User;
-
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
-
-=======
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Campaign;
 use App\Models\User;
->>>>>>> 10a8ce5777a2f374a49a98f771a5561a50589a46
 
 class CampaignSeeder extends Seeder
 {
     public function run(): void
     {
-<<<<<<< HEAD
-
-        // cari satu user untuk dijadikan owner
-        $ownerId = User::value('id');
-        if (!$ownerId) {
-            // jika belum ada user sama sekali, buat dummy
-            $ownerId = User::factory()->create([
-                'name' => 'Admin Yayasan',
-                'email' => 'admin@example.com',
-                // password akan dibuat oleh factory default
-            ])->id;
-        }
-
-        Campaign::firstOrCreate(
-            ['slug' => 'bantu-pendidikan-anak'],
-            [
-                'title'       => 'Bantu Pendidikan Anak Pelosok',
-                'excerpt'     => 'Akses buku & beasiswa untuk adik-adik di pelosok.',
-                'description' => 'Mari wujudkan mimpi mereka melalui akses pendidikan yang layak.',
-                'goal_amount' => 50000000,
-                'status'      => 'published',
-                'owner_id'    => $ownerId, // ⬅️ wajib diisi
-            ]
-        );
-
-=======
->>>>>>> 10a8ce5777a2f374a49a98f771a5561a50589a46
         $now = Carbon::now();
 
-        // Cari owner untuk campaign
-        // Prioritas: admin1@yayasan.test (sesuai DatabaseSeeder di branch fix-frontend),
-        // fallback: first user; jika tidak ada user sama sekali, buat 1 dummy owner.
+        // Tentukan owner campaign:
+        // Prioritas: admin1@yayasan.test → fallback: user pertama → fallback: buat dummy 1 user
         $ownerId = User::where('email', 'admin1@yayasan.test')->value('id')
             ?? User::value('id');
 
         if (!$ownerId) {
-            $owner = User::factory()->create([
+            $ownerId = User::factory()->create([
                 'name'  => 'Admin Yayasan',
                 'email' => 'admin@example.com',
-            ]);
-            $ownerId = $owner->id;
+                // password by factory default
+            ])->id;
         }
 
+        // Data campaign yang konsisten (pakai target_amount)
         $rows = [
+            // Revisi dari firstOrCreate lama: samakan ke target_amount
+            [
+                'owner_id'      => $ownerId,
+                'title'         => 'Bantu Pendidikan Anak Pelosok',
+                'slug'          => 'bantu-pendidikan-anak',
+                'target_amount' => 50_000_000,
+                'deadline_at'   => $now->copy()->addMonths(2),
+                'status'        => 'published',
+                'category'      => 'pendidikan',
+                'cover_url'     => 'https://images.unsplash.com/photo-1558021212-51b6ecfa0db9?q=80&w=1600&auto=format&fit=crop',
+                'excerpt'       => 'Akses buku & beasiswa untuk adik-adik di pelosok.',
+                'description'   => 'Mari wujudkan mimpi mereka melalui akses pendidikan yang layak.',
+                'created_at'    => $now,
+                'updated_at'    => $now,
+            ],
             [
                 'owner_id'      => $ownerId,
                 'title'         => 'Bantuan Pendidikan Anak Dhuafa',
@@ -116,22 +88,7 @@ class CampaignSeeder extends Seeder
             ],
         ];
 
-<<<<<<< HEAD
-        DB::table('campaigns')->upsert($rows, ['slug'], [
-            'owner_id',
-            'title',
-            'target_amount',
-            'deadline_at',
-            'status',
-            'category',
-            'cover_url',
-            'description',
-            'updated_at'
-        ]);
-
-=======
-        // Upsert berdasarkan slug (unik)
-        // Kolom yang di-update saat konflik: selain slug & created_at.
+        // Upsert berdasarkan slug (unik). Update semua kolom kecuali slug & created_at.
         Campaign::upsert(
             $rows,
             ['slug'],
@@ -143,10 +100,10 @@ class CampaignSeeder extends Seeder
                 'status',
                 'category',
                 'cover_url',
+                'excerpt',
                 'description',
                 'updated_at',
             ]
         );
->>>>>>> 10a8ce5777a2f374a49a98f771a5561a50589a46
     }
 }

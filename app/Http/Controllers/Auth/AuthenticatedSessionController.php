@@ -22,14 +22,25 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(\App\Http\Requests\Auth\LoginRequest $request): \Illuminate\Http\RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $u = $request->user();
+
+        // Gunakan Spatie langsung (guard web by default dari modelmu)
+        if (method_exists($u, 'hasRole') && $u->hasRole('superadmin')) {
+            return redirect(route('superadmin.dashboard'));   // role name di DB kamu: 'superadmin'
+        }
+
+        if (method_exists($u, 'hasAnyRole') && $u->hasAnyRole(['ADMIN','admin'])) {
+            return redirect(route('admin.dashboard'));        // cover 'ADMIN' uppercase atau 'admin' lowercase
+        }
+
+        return redirect(route('user.donations.dashboard'));
     }
+
 
     /**
      * Destroy an authenticated session.
