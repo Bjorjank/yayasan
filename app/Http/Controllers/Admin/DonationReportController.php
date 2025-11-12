@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -29,13 +31,8 @@ class DonationReportController extends Controller
         $totalAmount = (int) $forAgg->sum('amount');
         $totalCount  = (int) $forAgg->count();
 
-        $topCampaigns = (clone $forAgg)
-            ->selectRaw('campaign_id, SUM(amount) as total, COUNT(*) as cnt')
-            ->groupBy('campaign_id')
-            ->with('campaign:id,title,slug')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
+        // Top campaigns (periode & filter aktif saat ini)
+        $topCampaigns = $this->buildTopCampaigns((clone $forAgg));
 
         [$chartLabels, $chartData] = $this->buildDailySeries($range, $start, $end);
         $quick = $this->quickNumbers();
@@ -69,6 +66,9 @@ class DonationReportController extends Controller
         $totalAmount = (int) $forAgg->sum('amount');
         $totalCount  = (int) $forAgg->count();
 
+        // Top campaigns khusus campaign yang dipilih (akan berisi 1 item)
+        $topCampaigns = $this->buildTopCampaigns((clone $forAgg));
+
         [$chartLabels, $chartData] = $this->buildDailySeries($range, $start, $end, $campaign->id);
         $quick = $this->quickNumbers($campaign->id);
 
@@ -78,9 +78,22 @@ class DonationReportController extends Controller
             'donations','range','start','end',
             'totalAmount','totalCount','topCampaigns',
             'chartLabels','chartData','quick','campaignOptions','campaign'
-        ))->with('topCampaigns', collect([
-            (object)[ 'campaign' => $campaign, 'total' => $totalAmount, 'cnt' => $totalCount ]
-        ]));
+        ));
+    }
+
+    /**
+     * Kembalikan daftar top campaign (total nominal & count) berdasarkan query agregat yang diberikan.
+     * Expectation: $forAgg sudah memuat filter waktu/status/campaign (kalau ada).
+     */
+    private function buildTopCampaigns($forAgg, int $limit = 5)
+    {
+        return $forAgg
+            ->selectRaw('campaign_id, SUM(amount) as total, COUNT(*) as cnt')
+            ->groupBy('campaign_id')
+            ->with('campaign:id,title,slug')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get();
     }
 
     private function resolveRange(string $range): array
@@ -102,10 +115,12 @@ class DonationReportController extends Controller
             $end   = now()->endOfDay();
             $start = now()->subDays(29)->startOfDay();
         }
+
         $period = CarbonPeriod::create($start->copy()->startOfDay(), '1 day', $end->copy()->endOfDay());
 
         $rowsQ = Donation::where('status','settlement')
             ->whereBetween('paid_at', [$start, $end]);
+
         if ($campaignId) {
             $rowsQ->where('campaign_id', $campaignId);
         }
@@ -123,6 +138,7 @@ class DonationReportController extends Controller
             $labels[] = $date->format('d M');
             $data[]   = (int) ($rows[$key] ?? 0);
         }
+
         return [$labels, $data];
     }
 
@@ -136,16 +152,19 @@ class DonationReportController extends Controller
             'month' => [$now->copy()->startOfMonth(), $now->copy()->endOfDay()],
             'all'   => [null, null],
         ];
+
         $out = [];
         foreach ($defs as $key => [$s, $e]) {
             $q = Donation::where('status','settlement');
             if ($campaignId) $q->where('campaign_id', $campaignId);
-            if ($s && $e) $q->whereBetween('paid_at', [$s, $e]);
+            if ($s && $e)    $q->whereBetween('paid_at', [$s, $e]);
+
             $out[$key] = [
                 'amount' => (int) $q->sum('amount'),
                 'count'  => (int) $q->count(),
             ];
         }
+
         return $out;
     }
 }

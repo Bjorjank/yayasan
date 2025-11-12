@@ -11,10 +11,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Password default untuk akun awal (bisa di-override via .env: SEEDER_DEFAULT_PASSWORD)
+        // Password default untuk akun awal (bisa override via .env)
         $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', 'secret123');
 
-        // 1) Seed akun dasar
+        // 1) Seed akun dasar (wajib ada duluan karena dipakai relasi)
         $accounts = [
             ['name' => 'Super Admin', 'email' => 'superadmin@yayasan.test'],
             ['name' => 'Admin Satu',  'email' => 'admin1@yayasan.test'],
@@ -35,21 +35,20 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 2) Set up roles & permissions (wajib). Aman-kan dengan class_exists.
+        // 2) Roles/Permissions (jika ada)
         if (class_exists(\Database\Seeders\RoleSetupSeeder::class)) {
             $this->call(RoleSetupSeeder::class);
         }
 
-        // 3) Seeder lain (opsional) — hanya dipanggil jika kelasnya ada.
+        // 3) Seeder lain — aman karena users sudah ada
         $optionalSeeders = [
-            // utama
             \Database\Seeders\CampaignSeeder::class,
             \Database\Seeders\DonationSeeder::class,
             \Database\Seeders\ChatSeeder::class,
             \Database\Seeders\MilestoneSeeder::class,
             \Database\Seeders\WebhookEventSeeder::class,
 
-            // kompatibilitas/legacy (jika masih dipakai di branch lain)
+            // kompatibilitas/legacy bila masih dipakai
             \Database\Seeders\RolesAndPermissionsSeeder::class,
             \Database\Seeders\UserSeeder::class,
         ];

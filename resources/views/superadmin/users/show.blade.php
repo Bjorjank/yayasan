@@ -8,10 +8,10 @@
 <div class="space-y-6">
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
     <div>
-      <h1 class="text-2xl md:text-3xl font-black text-gray-900">{{ $u->name }}</h1>
-      <div class="text-gray-600">{{ $u->email }}</div>
+      <h1 class="text-2xl md:text-3xl font-black text-gray-900">{{ $user->name }}</h1>
+      <div class="text-gray-600">{{ $user->email }}</div>
       <div class="mt-1">
-        @php $role = $u->getRoleNames()->first() ?? '—'; @endphp
+        @php $role = $user->getRoleNames()->first() ?? '—'; @endphp
         <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs ring-1 ring-gray-200 bg-gray-50 text-gray-700">
           {{ $role }}
         </span>
@@ -32,7 +32,7 @@
     </div>
     <div class="rounded-2xl bg-white/80 ring-1 ring-gray-200 p-5 shadow-sm">
       <div class="text-xs text-gray-500">Bergabung</div>
-      <div class="mt-1 text-2xl font-bold">{{ $u->created_at->format('d M Y') }}</div>
+      <div class="mt-1 text-2xl font-bold">{{ $user->created_at->format('d M Y') }}</div>
     </div>
   </div>
 
