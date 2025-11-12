@@ -38,12 +38,20 @@ class DonationReportController extends Controller
         $quick = $this->quickNumbers();
 
         // untuk dropdown campaign filter cepat
-        $campaignOptions = Campaign::select('id','title','slug')->orderBy('title')->get();
+        $campaignOptions = Campaign::select('id', 'title', 'slug')->orderBy('title')->get();
 
         return view('admin.reports.donations', compact(
-            'donations','range','start','end',
-            'totalAmount','totalCount','topCampaigns',
-            'chartLabels','chartData','quick','campaignOptions'
+            'donations',
+            'range',
+            'start',
+            'end',
+            'totalAmount',
+            'totalCount',
+            'topCampaigns',
+            'chartLabels',
+            'chartData',
+            'quick',
+            'campaignOptions'
         ));
     }
 
@@ -72,12 +80,21 @@ class DonationReportController extends Controller
         [$chartLabels, $chartData] = $this->buildDailySeries($range, $start, $end, $campaign->id);
         $quick = $this->quickNumbers($campaign->id);
 
-        $campaignOptions = Campaign::select('id','title','slug')->orderBy('title')->get();
+        $campaignOptions = Campaign::select('id', 'title', 'slug')->orderBy('title')->get();
 
         return view('admin.reports.donations', compact(
-            'donations','range','start','end',
-            'totalAmount','totalCount','topCampaigns',
-            'chartLabels','chartData','quick','campaignOptions','campaign'
+            'donations',
+            'range',
+            'start',
+            'end',
+            'totalAmount',
+            'totalCount',
+            'topCampaigns',
+            'chartLabels',
+            'chartData',
+            'quick',
+            'campaignOptions',
+            'campaign'
         ));
     }
 
@@ -100,12 +117,12 @@ class DonationReportController extends Controller
     {
         $now = now();
         return match ($range) {
-            'today' => [ $now->copy()->startOfDay(), $now->copy()->endOfDay() ],
-            '3d'    => [ $now->copy()->subDays(2)->startOfDay(), $now->copy()->endOfDay() ],
-            'week'  => [ $now->copy()->startOfWeek(), $now->copy()->endOfDay() ],
-            'month' => [ $now->copy()->startOfMonth(), $now->copy()->endOfDay() ],
-            'all'   => [ null, null ],
-            default => [ $now->copy()->startOfDay(), $now->copy()->endOfDay() ],
+            'today' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            '3d'    => [$now->copy()->subDays(2)->startOfDay(), $now->copy()->endOfDay()],
+            'week'  => [$now->copy()->startOfWeek(), $now->copy()->endOfDay()],
+            'month' => [$now->copy()->startOfMonth(), $now->copy()->endOfDay()],
+            'all'   => [null, null],
+            default => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
         };
     }
 
@@ -118,7 +135,7 @@ class DonationReportController extends Controller
 
         $period = CarbonPeriod::create($start->copy()->startOfDay(), '1 day', $end->copy()->endOfDay());
 
-        $rowsQ = Donation::where('status','settlement')
+        $rowsQ = Donation::where('status', 'settlement')
             ->whereBetween('paid_at', [$start, $end]);
 
         if ($campaignId) {
@@ -155,7 +172,7 @@ class DonationReportController extends Controller
 
         $out = [];
         foreach ($defs as $key => [$s, $e]) {
-            $q = Donation::where('status','settlement');
+            $q = Donation::where('status', 'settlement');
             if ($campaignId) $q->where('campaign_id', $campaignId);
             if ($s && $e)    $q->whereBetween('paid_at', [$s, $e]);
 
