@@ -220,4 +220,20 @@ final class UserController extends Controller
 
         return response()->json(['dupes' => $dupes]);
     }
+
+    
+    /**
+     * Edit JSON untuk prefilling modal edit (dipanggil saat reload setelah validasi gagal)
+     * GET /superadmin/users/{user}/edit-json
+     */
+    public function editJson(User $user)
+    {
+        return response()->json([
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $user->getRoleNames()->first() ?? '',
+        ]);
+    }
+    
 }

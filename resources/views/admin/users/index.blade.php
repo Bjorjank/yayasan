@@ -1,3 +1,4 @@
+{{-- resources/views/admin/users/index.blade.php --}}
 @extends('layouts.admin')
 
 @section('title','Admin — Users')
@@ -25,6 +26,7 @@
   data-edit-id="{{ e((string)$editId) }}"
   data-check-url="{{ $checkUrl }}"
   data-users-index-url="{{ $indexUrl }}"
+  data-edit-json-base="{{ rtrim(url('/admin/users'), '/') }}"
   class="space-y-6">
 
   {{-- ===== Center Alert (success/error) ===== --}}
@@ -53,7 +55,7 @@
     </div>
   </div>
 
-  {{-- ===== Toasts ringan (opsional) ===== --}}
+  {{-- ===== Toasts ringan ===== --}}
   <div class="fixed bottom-4 right-4 z-[60] space-y-3" x-cloak x-show="toasts.length">
     <template x-for="t in toasts" :key="t.id">
       <div x-transition class="max-w-sm rounded-xl ring-1 ring-black/10 shadow-lg p-4 bg-white flex gap-3">
@@ -253,19 +255,25 @@
     </div>
   </div>
 
-  {{-- ===== Edit Modal ===== --}}
+  {{-- ===== Edit User Modal (UI IDENTIK DENGAN CREATE) ===== --}}
   <div x-cloak x-show="openEditModal" x-transition
        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
-    <div @click.outside="openEditModal=false" class="w-full max-w-lg rounded-2xl bg-white ring-1 ring-gray-200 shadow-xl">
-      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900">Edit User</h3>
-        <button @click="openEditModal=false" class="text-gray-400 hover:text-gray-600">✕</button>
+    <div @click.outside="openEditModal=false"
+         class="w-full max-w-xl rounded-3xl bg-white/90 backdrop-blur ring-1 ring-gray-200 shadow-2xl overflow-hidden">
+
+      <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Edit User</h3>
+          <p class="text-xs text-gray-500">Perbarui data & role pengguna.</p>
+        </div>
+        <button @click="openEditModal=false" class="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500">✕</button>
       </div>
 
       <form :action="editAction" method="post"
-            x-data="editForm(() => edit)"
+            x-data="editForm()"
+            @load-edit.window="state = $event.detail; $nextTick(() => focusFirst())"
             @submit.prevent.stop="doSubmit($event, $el)"
-            class="p-5 space-y-4" novalidate>
+            class="px-6 py-5 space-y-4" novalidate>
         @csrf
         @method('PUT')
 
@@ -276,26 +284,41 @@
         </template>
 
         <div>
-          <label class="text-sm font-medium">Nama</label>
-          <input name="name" x-ref="name" x-model="state.name" required class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
+          <label class="text-sm font-medium text-gray-800">Nama</label>
+          <input name="name" x-ref="name" x-model="state.name" required
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="Nama lengkap">
         </div>
+
         <div>
-          <label class="text-sm font-medium">Email</label>
-          <input type="email" name="email" x-ref="email" x-model="state.email" required class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
+          <label class="text-sm font-medium text-gray-800">Email</label>
+          <input type="email" name="email" x-model="state.email" required
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="email@contoh.com">
         </div>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="text-sm font-medium">Password (opsional)</label>
-            <input type="password" name="password" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
-          </div>
-          <div>
-            <label class="text-sm font-medium">Konfirmasi Password</label>
-            <input type="password" name="password_confirmation" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
+
+        <div x-data="{showPwd:false}">
+          <label class="text-sm font-medium text-gray-800">Password (opsional)</label>
+          <div class="mt-1 relative">
+            <input :type="showPwd ? 'text' : 'password'" name="password"
+                   class="w-full rounded-xl border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                   placeholder="Biarkan kosong jika tidak diubah">
+            <button type="button" @click="showPwd=!showPwd"
+                    class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700" aria-label="Toggle">👁</button>
           </div>
         </div>
+
         <div>
-          <label class="text-sm font-medium">Role</label>
-          <select name="role" x-model="state.role" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm">
+          <label class="text-sm font-medium text-gray-800">Konfirmasi Password</label>
+          <input type="password" name="password_confirmation"
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="Ulangi password (jika diisi)">
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-800">Role</label>
+          <select name="role" x-model="state.role"
+                  class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none">
             @foreach($allowedRoles as $r)
               <option value="{{ $r }}">{{ $r }}</option>
             @endforeach
@@ -303,9 +326,12 @@
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2">
-          <button type="button" @click="openEditModal=false" class="px-4 py-2 rounded-xl ring-1 ring-gray-200">Batal</button>
+          <button type="button" @click="openEditModal=false"
+                  class="px-4 py-2 rounded-xl ring-1 ring-gray-200 bg-white hover:bg-gray-50">Batal</button>
           <button :disabled="submitting" :class="submitting ? 'opacity-50 cursor-not-allowed' : ''"
-                  class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Simpan</button>
+                  class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+            Simpan Perubahan
+          </button>
         </div>
       </form>
     </div>
@@ -358,14 +384,15 @@ document.addEventListener('alpine:init', () => {
     // services URL
     __checkUrl:null,
     __usersIndexUrl:null,
+    __editJsonBase:null,
 
     init(rootEl){
       const root = rootEl || this.$el;
 
-      this.__checkUrl      = root.dataset.checkUrl      || null;
-      this.__usersIndexUrl = root.dataset.usersIndexUrl || '{{ url('/admin/users') }}';
+      this.__checkUrl       = root.dataset.checkUrl || null;
+      this.__usersIndexUrl  = root.dataset.usersIndexUrl || '{{ url('/admin/users') }}';
+      this.__editJsonBase   = root.dataset.editJsonBase || '{{ url('/admin/users') }}';
 
-      // flash → tampil di tengah
       const flashOk   = root.dataset.flashOk  || '';
       const flashErr  = root.dataset.flashErr || '';
       const errorsArr = safeJson(root.dataset.errors, []);
@@ -381,8 +408,7 @@ document.addEventListener('alpine:init', () => {
       // auto-buka modal sesuai flag dari controller
       if (formFlag === 'create') this.openCreate = true;
       if (formFlag === 'edit' && editId) {
-        // minimal buka modal, datanya akan diisi saat klik edit; atau fetch detail jika perlu
-        this.openEditModal = true;
+        this.fetchAndOpenEdit(editId);
       }
     },
 
@@ -400,8 +426,29 @@ document.addEventListener('alpine:init', () => {
     openEdit(payload){
       this.edit = { ...payload };
       this.editAction = `${this.__usersIndexUrl}/${payload.id}`;
-      this.openEditModal = true;
+      this.$nextTick(() => {
+        this.openEditModal = true;
+        this.$dispatch('load-edit', this.edit);
+      });
     },
+    async fetchAndOpenEdit(id){
+      try{
+        const url = `${this.__editJsonBase}/${id}/edit-json`;
+        const res = await fetch(url, { headers:{'Accept':'application/json'} });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        this.edit = { id: data.id, name: data.name, email: data.email, role: data.role || '' };
+        this.editAction = `${this.__usersIndexUrl}/${data.id}`;
+        this.$nextTick(() => {
+          this.openEditModal = true;
+          this.$dispatch('load-edit', this.edit);
+        });
+      }catch(err){
+        console.warn('[usersPage.fetchAndOpenEdit] error', err);
+        this.showCenter('error', 'Gagal memuat data user untuk Edit.', 'Gagal');
+      }
+    },
+
     openDelete(payload){
       this.del = { ...payload };
       this.deleteAction = `${this.__usersIndexUrl}/${payload.id}`;
@@ -455,11 +502,11 @@ document.addEventListener('alpine:init', () => {
     }
   });
 
-  // EDIT pre-check
-  window.editForm = (getEditState) => ({
+  // EDIT pre-check (stateless, selalu menerima state via event load-edit)
+  window.editForm = () => ({
     submitting:false, bannerError:'', _nativeBypass:false,
     state:{ id:null, name:'', email:'', role:'' },
-    init(){ this.state = { ...getEditState() }; },
+    focusFirst(){ this.$refs?.name?.focus?.(); },
     async doSubmit(e, formEl){
       e?.preventDefault?.(); e?.stopPropagation?.(); e?.stopImmediatePropagation?.();
       if (this.submitting) return; this.submitting = true;

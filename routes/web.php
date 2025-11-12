@@ -162,6 +162,8 @@ Route::middleware(['auth','role:superadmin'])
         // Laporan Donasi
         Route::get('/reports/donations', [SADonationReport::class, 'index'])->name('reports.donations');
 
+        Route::get('/users/check-unique', [\App\Http\Controllers\Superadmin\UserController::class, 'checkUnique'])
+            ->name('users.check-unique');
         // Settings (stub)
         Route::view('/settings', 'superadmin.stub')->name('settings');
 
@@ -172,14 +174,12 @@ Route::middleware(['auth','role:superadmin'])
         Route::put('/users/{user}',    [SAUser::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [SAUser::class, 'destroy'])->name('users.destroy');
         // routes/web.php (di dalam group superadmin...)
-        Route::get('/users/check-unique', [\App\Http\Controllers\Superadmin\UserController::class, 'checkUnique'])
-            ->name('users.check-unique');
 
     });
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN AREA (role: superadmin|admin)
+| ADMIN AREA (role:admin)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth','role:superadmin|admin'])
@@ -194,6 +194,8 @@ Route::middleware(['auth','role:superadmin|admin'])
         Route::get('/reports/donations/campaign/{campaign}', [\App\Http\Controllers\Admin\DonationReportController::class, 'byCampaign'])
             ->name('reports.donations.campaign');
 
+        Route::get('/users/check-unique', [\App\Http\Controllers\Admin\UserController::class, 'checkUnique'])
+        ->name('users.check-unique');
         // Users (khusus admin)
         Route::get('/users',           [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}',    [AdminUserController::class, 'show'])->name('users.show');
@@ -201,8 +203,7 @@ Route::middleware(['auth','role:superadmin|admin'])
         Route::put('/users/{user}',    [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
-        Route::get('/users/check-unique', [\App\Http\Controllers\Admin\UserController::class, 'checkUnique'])
-        ->name('users.check-unique');
+        
     });
 
 /*

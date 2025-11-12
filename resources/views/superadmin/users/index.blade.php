@@ -10,6 +10,8 @@
   $flashOk   = session('ok') ?? '';
   $flashErr  = session('err') ?? '';
   $errorsArr = $errors->any() ? $errors->all() : [];
+  $formFlag  = session('form') ?? '';
+  $editId    = session('edit_id') ?? '';
   $checkUrl  = route('superadmin.users.check-unique');
   $indexUrl  = route('superadmin.users.index');
 @endphp
@@ -17,15 +19,17 @@
 <div
   x-data="usersPage"
   x-init="init($el)"
-  {{-- semua data untuk <script> ditaruh di dataset --}}
   data-flash-ok="{{ e($flashOk) }}"
   data-flash-err="{{ e($flashErr) }}"
   data-errors='@json($errorsArr)'
+  data-form-flag="{{ e($formFlag) }}"
+  data-edit-id="{{ e((string)$editId) }}"
   data-check-url="{{ $checkUrl }}"
   data-users-index-url="{{ $indexUrl }}"
+  data-edit-json-base="{{ rtrim(url('/superadmin/users'), '/') }}"
   class="space-y-6">
 
-  {{-- ====== CENTER ALERT (untuk duplikat & flash sukses/gagal) ====== --}}
+  {{-- Center Alert --}}
   <div class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4"
        x-cloak x-show="centerAlert.open" x-transition.opacity>
     <div @click.outside="centerAlert.open=false"
@@ -51,7 +55,7 @@
     </div>
   </div>
 
-  {{-- ====== TOASTS (tetap ada untuk info ringan) ====== --}}
+  {{-- Toasts --}}
   <div class="fixed bottom-4 right-4 z-[60] space-y-3" x-cloak x-show="toasts.length">
     <template x-for="t in toasts" :key="t.id">
       <div x-transition class="max-w-sm rounded-xl ring-1 ring-black/10 shadow-lg p-4 bg-white flex gap-3">
@@ -78,10 +82,10 @@
 
     <div class="flex items-center gap-2">
       <form method="get" class="flex items-center gap-2" action="{{ $indexUrl }}">
-        <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama/email…"
+        <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Cari nama/email…"
                class="w-56 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"/>
         <button class="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700">Cari</button>
-        @if($q !== '')
+        @if(($q ?? '') !== '')
           <a href="{{ $indexUrl }}" class="px-3 py-2 rounded-xl ring-1 ring-gray-200 text-gray-700 bg-white hover:bg-gray-50 text-sm">Reset</a>
         @endif
       </form>
@@ -95,19 +99,14 @@
 
   {{-- Table --}}
   <div class="rounded-3xl overflow-hidden ring-1 ring-gray-200 bg-white shadow-sm">
-    <div class="px-5 py-4 border-b border-gray-100 text-sm text-gray-600 flex items-center justify-between">
-      <div>
-        Menampilkan <span class="font-semibold">{{ $users->count() }}</span> dari
-        <span class="font-semibold">{{ $users->total() }}</span> pengguna
-      </div>
-      @if($q ?? false)
-        <div class="hidden sm:block text-xs text-gray-500">Kata kunci: “{{ $q }}”</div>
-      @endif
+    <div class="px-5 py-4 border-b border-gray-100 text-sm text-gray-600">
+      Menampilkan <span class="font-semibold">{{ $users->count() }}</span> dari
+      <span class="font-semibold">{{ $users->total() }}</span> pengguna
     </div>
 
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+        <thead class="bg-gray-50 text-gray-600">
           <tr>
             <th class="p-3 text-left">User</th>
             <th class="p-3 text-left">Email</th>
@@ -119,87 +118,40 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           @forelse($users as $u)
-            @php
-              $roleName = $u->getRoleNames()->first() ?? '—';
-              $initials = collect(explode(' ', trim($u->name)))->filter()->map(fn($p)=>mb_substr($p,0,1))->take(2)->implode('');
-              $roleClasses = match(strtolower($roleName)) {
-                'superadmin' => 'bg-purple-50 text-purple-700 ring-purple-200',
-                'admin'      => 'bg-blue-50 text-blue-700 ring-blue-200',
-                'loket'      => 'bg-amber-50 text-amber-700 ring-amber-200',
-                default      => 'bg-gray-50 text-gray-700 ring-gray-200',
-              };
-            @endphp
-
+            @php $roleName = $u->getRoleNames()->first() ?? '—'; @endphp
             <tr class="hover:bg-gray-50/60">
               <td class="p-3">
-                <div class="flex items-center gap-3">
-                  <div class="h-9 w-9 rounded-xl bg-gray-100 ring-1 ring-gray-200 flex items-center justify-center font-semibold text-gray-700">
-                    {{ $initials ?: 'U' }}
-                  </div>
-                  <div>
-                    <div class="font-semibold text-gray-900 leading-tight">{{ $u->name }}</div>
-                    <div class="text-[11px] text-gray-500">ID #{{ $u->id }}</div>
-                  </div>
-                </div>
+                <div class="font-semibold text-gray-900">{{ $u->name }}</div>
+                <div class="text-xs text-gray-500">#{{ $u->id }}</div>
               </td>
-
               <td class="p-3 text-gray-700 break-all">{{ $u->email }}</td>
-
               <td class="p-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs ring-1 {{ $roleClasses }}">
-                  {{ ucfirst($roleName) }}
+                <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs ring-1 ring-gray-200 bg-gray-50 text-gray-700">
+                  {{ $roleName }}
                 </span>
               </td>
-
-              <td class="p-3 text-right font-semibold text-gray-900 whitespace-nowrap">
-                Rp {{ number_format((int)($u->donated_sum ?? 0), 0, ',', '.') }}
+              <td class="p-3 text-right font-semibold text-gray-900">
+                Rp {{ number_format((int)($u->donated_sum ?? 0),0,',','.') }}
               </td>
-
-              <td class="p-3 text-gray-700">
-                {{ number_format((int)($u->donated_cnt ?? 0)) }}
-              </td>
-
+              <td class="p-3 text-gray-700">{{ number_format((int)($u->donated_cnt ?? 0)) }}</td>
               <td class="p-3">
-                <div class="flex items-center justify-end gap-1.5">
+                <div class="flex items-center justify-end gap-2">
                   <a href="{{ route('superadmin.users.show', $u) }}"
-                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg ring-1 ring-gray-200 hover:bg-gray-50"
-                     title="Detail user">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2"/>
-                      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    <span class="hidden lg:inline">Detail</span>
-                  </a>
+                     class="px-3 py-1.5 rounded-lg ring-1 ring-gray-200 hover:bg-gray-50">Detail</a>
 
-                  <button
-                    @click="openEdit({ id: {{ $u->id }},
-                                        name: @js($u->name),
-                                        email: @js($u->email),
-                                        role: @js($roleName) })"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg ring-1 ring-gray-200 hover:bg-gray-50"
-                    title="Edit user">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <path d="M4 21l4.5-1 10-10a2.1 2.1 0 10-3-3l-10 10L4 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="hidden lg:inline">Edit</span>
-                  </button>
+                  <button @click="openEdit({ id: {{ $u->id }},
+                                               name: @js($u->name),
+                                               email: @js($u->email),
+                                               role: @js($roleName) })"
+                          class="px-3 py-1.5 rounded-lg ring-1 ring-gray-200 hover:bg-gray-50">Edit</button>
 
-                  <button
-                    @click="openDelete({ id: {{ $u->id }}, name: @js($u->name) })"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                    title="Hapus user">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-1 0l-1 13a2 2 0 01-2 2h-2a2 2 0 01-2-2L7 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="hidden lg:inline">Hapus</span>
-                  </button>
+                  <button @click="openDelete({ id: {{ $u->id }}, name: @js($u->name) })"
+                          class="px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700">Hapus</button>
                 </div>
               </td>
             </tr>
           @empty
-            <tr>
-              <td class="p-8 text-center text-gray-500" colspan="6">Belum ada user.</td>
-            </tr>
+            <tr><td class="p-6 text-center text-gray-500" colspan="6">Belum ada user.</td></tr>
           @endforelse
         </tbody>
       </table>
@@ -210,7 +162,7 @@
     </div>
   </div>
 
-  {{-- ===== Create Modal ===== --}}
+  {{-- Create Modal (identik gaya admin) --}}
   <div x-cloak x-show="openCreate" x-transition
        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
     <div @click.outside="openCreate=false"
@@ -219,23 +171,15 @@
       <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">Tambah User</h3>
-          <p class="text-xs text-gray-500">Lengkapi data pengguna dan tentukan perannya.</p>
+          <p class="text-xs text-gray-500">Lengkapi data & tentukan role.</p>
         </div>
-        <button @click="openCreate=false"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500"
-                aria-label="Tutup modal">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
+        <button @click="openCreate=false" class="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500">✕</button>
       </div>
 
-      <!-- CREATE -->
       <form method="post" action="{{ route('superadmin.users.store') }}"
             x-data="createForm()"
             @submit.prevent.stop="doSubmit($event, $el)"
             class="px-6 py-5 space-y-4" novalidate>
-
         @csrf
 
         <template x-if="bannerError">
@@ -249,7 +193,6 @@
           <input name="name" x-ref="name" required
                  class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
                  placeholder="Nama lengkap">
-          @error('name')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
         </div>
 
         <div>
@@ -257,7 +200,6 @@
           <input type="email" name="email" x-ref="email" required
                  class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
                  placeholder="email@contoh.com">
-          @error('email')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
         </div>
 
         <div x-data="{showPwd:false, pwd:'', strength:0}"
@@ -268,12 +210,7 @@
                    class="w-full rounded-xl border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
                    placeholder="Minimal 8 karakter">
             <button type="button" @click="showPwd=!showPwd"
-                    class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700" aria-label="Toggle">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
+                    class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700" aria-label="Toggle">👁</button>
           </div>
           <div class="mt-2">
             <div class="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -286,7 +223,6 @@
               <span x-text="['Sangat lemah','Lemah','Cukup','Kuat','Sangat kuat'][strength] || '—'"></span>
             </div>
           </div>
-          @error('password')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
         </div>
 
         <div>
@@ -299,9 +235,10 @@
         <div>
           <label class="text-sm font-medium text-gray-800">Role</label>
           <select name="role" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none">
-            @foreach($allowedRoles as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+            @foreach($allowedRoles as $r)
+              <option value="{{ $r }}">{{ $r }}</option>
+            @endforeach
           </select>
-          @error('role')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2">
@@ -316,20 +253,25 @@
     </div>
   </div>
 
-  {{-- ===== Edit Modal ===== --}}
+  {{-- Edit Modal (UI identik create) --}}
   <div x-cloak x-show="openEditModal" x-transition
        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
-    <div @click.outside="openEditModal=false" class="w-full max-w-lg rounded-2xl bg-white ring-1 ring-gray-200 shadow-xl">
-      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900">Edit User</h3>
-        <button @click="openEditModal=false" class="text-gray-400 hover:text-gray-600">✕</button>
+    <div @click.outside="openEditModal=false"
+         class="w-full max-w-xl rounded-3xl bg-white/90 backdrop-blur ring-1 ring-gray-200 shadow-2xl overflow-hidden">
+
+      <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Edit User</h3>
+          <p class="text-xs text-gray-500">Perbarui data & role pengguna.</p>
+        </div>
+        <button @click="openEditModal=false" class="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500">✕</button>
       </div>
 
       <form :action="editAction" method="post"
-            x-data="editForm(() => edit)"
+            x-data="editForm()"
+            @load-edit.window="state = $event.detail; $nextTick(() => $refs.name?.focus?.())"
             @submit.prevent.stop="doSubmit($event, $el)"
-            class="p-5 space-y-4" novalidate>
-
+            class="px-6 py-5 space-y-4" novalidate>
         @csrf
         @method('PUT')
 
@@ -340,44 +282,60 @@
         </template>
 
         <div>
-          <label class="text-sm font-medium">Nama</label>
-          <input name="name" x-ref="name" x-model="state.name" required class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
-          @error('name')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          <label class="text-sm font-medium text-gray-800">Nama</label>
+          <input name="name" x-ref="name" x-model="state.name" required
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="Nama lengkap">
         </div>
+
         <div>
-          <label class="text-sm font-medium">Email</label>
-          <input type="email" name="email" x-ref="email" x-model="state.email" required class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
-          @error('email')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          <label class="text-sm font-medium text-gray-800">Email</label>
+          <input type="email" name="email" x-model="state.email" required
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="email@contoh.com">
         </div>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="text-sm font-medium">Password (opsional)</label>
-            <input type="password" name="password" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
-            @error('password')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
-          </div>
-          <div>
-            <label class="text-sm font-medium">Konfirmasi Password</label>
-            <input type="password" name="password_confirmation" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"/>
+
+        <div x-data="{showPwd:false}">
+          <label class="text-sm font-medium text-gray-800">Password (opsional)</label>
+          <div class="mt-1 relative">
+            <input :type="showPwd ? 'text' : 'password'" name="password"
+                   class="w-full rounded-xl border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                   placeholder="Biarkan kosong jika tidak diubah">
+            <button type="button" @click="showPwd=!showPwd"
+                    class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700" aria-label="Toggle">👁</button>
           </div>
         </div>
+
         <div>
-          <label class="text-sm font-medium">Role</label>
-          <select name="role" x-model="state.role" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm">
-            @foreach($allowedRoles as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+          <label class="text-sm font-medium text-gray-800">Konfirmasi Password</label>
+          <input type="password" name="password_confirmation"
+                 class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
+                 placeholder="Ulangi password (jika diisi)">
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-800">Role</label>
+          <select name="role" x-model="state.role"
+                  class="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/50 focus:outline-none">
+            @foreach($allowedRoles as $r)
+              <option value="{{ $r }}">{{ $r }}</option>
+            @endforeach
           </select>
-          @error('role')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2">
-          <button type="button" @click="openEditModal=false" class="px-4 py-2 rounded-xl ring-1 ring-gray-200">Batal</button>
+          <button type="button" @click="openEditModal=false"
+                  class="px-4 py-2 rounded-xl ring-1 ring-gray-200 bg-white hover:bg-gray-50">Batal</button>
           <button :disabled="submitting" :class="submitting ? 'opacity-50 cursor-not-allowed' : ''"
-                  class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Simpan</button>
+                  class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+            Simpan Perubahan
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  {{-- ===== Delete Modal ===== --}}
+  {{-- Delete Modal --}}
   <div x-cloak x-show="openDeleteModal" x-transition
        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
     <div @click.outside="openDeleteModal=false" class="w-full max-w-md rounded-2xl bg-white ring-1 ring-gray-200 shadow-xl">
@@ -401,214 +359,187 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
-  // ===== Helper JSON aman =====
-  window.safeJson = function (raw, fallback) {
-    try { return JSON.parse(raw || ''); } catch { return fallback; }
-  };
+  window.safeJson = (raw, fallback) => { try { return JSON.parse(raw||''); } catch { return fallback; } };
 
-  // ===== Root component: Users Page =====
   Alpine.data('usersPage', () => ({
-    openCreate: false,
-    openEditModal: false,
-    openDeleteModal: false,
+    openCreate:false,
+    openEditModal:false,
+    openDeleteModal:false,
 
-    edit: { id:null, name:'', email:'', role:'' },
-    del:  { id:null, name:'' },
+    edit:{ id:null, name:'', email:'', role:'' },
+    del:{ id:null, name:'' },
 
-    editAction: '#',
-    deleteAction: '#',
+    editAction:'#',
+    deleteAction:'#',
 
-    // Toasts ringan
-    toasts: [],
-    toastId: 0,
+    toasts:[], toastId:0,
+    centerAlert:{ open:false, type:'success', title:'', message:'', redirectUrl:null },
 
-    // Alert tengah
-    centerAlert: { open:false, type:'success', title:'', message:'', redirectUrl:null },
+    __checkUrl:null,
+    __usersIndexUrl:null,
+    __editJsonBase:null,
 
-    // URL yang dipakai child components
-    __checkUrl: null,
-    __usersIndexUrl: null,
-
-    init() {
-      const root = this.$el;
-
-      // Simpan URL services dari dataset
+    init(rootEl){
+      const root = rootEl || this.$el;
       this.__checkUrl      = root.dataset.checkUrl      || null;
       this.__usersIndexUrl = root.dataset.usersIndexUrl || '{{ url('/superadmin/users') }}';
+      this.__editJsonBase  = root.dataset.editJsonBase  || '{{ url('/superadmin/users') }}';
 
-      // Ambil flash dari dataset → tampilkan di TENGAH
       const flashOk   = root.dataset.flashOk  || '';
       const flashErr  = root.dataset.flashErr || '';
       const errorsArr = safeJson(root.dataset.errors, []);
+      const formFlag  = root.dataset.formFlag || '';
+      const editId    = root.dataset.editId   || '';
 
-      if (flashOk) {
-        this.showCenter('success', flashOk, 'Berhasil');
-      }
-      if (flashErr) {
-        this.showCenter('error', flashErr, 'Gagal');
-      }
+      if (flashOk)  this.showCenter('success', flashOk, 'Berhasil');
+      if (flashErr) this.showCenter('error',   flashErr, 'Gagal');
       if (Array.isArray(errorsArr) && errorsArr.length) {
-        // gabungkan error agar tidak spam
         this.showCenter('error', errorsArr.join(' '), 'Gagal');
       }
+
+      // Auto-open modal sesuai flag
+      if (formFlag === 'create') this.openCreate = true;
+      if (formFlag === 'edit' && editId) {
+        this.fetchAndOpenEdit(editId);
+      }
     },
 
-    // ====== Helpers notifikasi ======
-    showCenter(type, message, title = null, redirectUrl = null) {
+    showCenter(type, message, title=null, redirectUrl=null){
       this.centerAlert = { open:true, type, title, message, redirectUrl };
     },
-    pushToast(type, message) {
-      const id = ++this.toastId;
-      this.toasts.push({ id, type, message });
-      setTimeout(() => this.dismissToast(id), 4500);
+    pushToast(type,message){
+      const id = ++this.toastId; this.toasts.push({id,type,message});
+      setTimeout(()=>this.dismissToast(id), 4500);
     },
-    dismissToast(id) {
-      this.toasts = this.toasts.filter(t => t.id !== id);
-    },
+    dismissToast(id){ this.toasts = this.toasts.filter(t => t.id!==id); },
 
-    // ====== Actions ======
-    openEdit(payload) {
+    openEdit(payload){
       this.edit = { ...payload };
       this.editAction = `${this.__usersIndexUrl}/${payload.id}`;
-      this.openEditModal = true;
+      this.$nextTick(() => {
+        this.openEditModal = true;
+        this.$dispatch('load-edit', this.edit);
+      });
     },
-
-    openDelete(payload) {
+    async fetchAndOpenEdit(id){
+      try{
+        const url = `${this.__editJsonBase}/${id}/edit-json`;
+        const res = await fetch(url, { headers:{'Accept':'application/json'} });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        this.edit = { id:data.id, name:data.name, email:data.email, role:data.role || '' };
+        this.editAction = `${this.__usersIndexUrl}/${data.id}`;
+        this.$nextTick(() => {
+          this.openEditModal = true;
+          this.$dispatch('load-edit', this.edit);
+        });
+      }catch(err){
+        console.warn('[usersPage.fetchAndOpenEdit] error', err);
+        this.showCenter('error', 'Gagal memuat data user untuk Edit.', 'Gagal');
+      }
+    },
+    openDelete(payload){
       this.del = { ...payload };
       this.deleteAction = `${this.__usersIndexUrl}/${payload.id}`;
       this.openDeleteModal = true;
     },
   }));
 
-  // ====== CREATE FORM component ======
+  // CREATE form (pre-check dupes)
   window.createForm = () => ({
-    submitting: false,
-    bannerError: '',
-    _nativeBypass: false,
-
-    async doSubmit(e, formEl) {
+    submitting:false, bannerError:'', _nativeBypass:false,
+    async doSubmit(e, formEl){
       e?.preventDefault?.(); e?.stopPropagation?.(); e?.stopImmediatePropagation?.();
-      if (this.submitting) return;
-      this.submitting = true;
+      if (this.submitting) return; this.submitting = true;
 
-      const root = formEl.closest('[x-data="usersPage"]');
-      const usersPage = root?.__x?.$data;
-      const checkUrl  = usersPage?.__checkUrl || null;
+      const root = formEl.closest('[x-data="usersPage"]'); const usersPage = root?.__x?.$data;
+      const checkUrl = usersPage?.__checkUrl || null;
 
       const nameInput  = formEl.querySelector('input[name="name"]');
       const emailInput = formEl.querySelector('input[name="email"]');
       const name  = (nameInput?.value || '').trim();
       const email = (emailInput?.value || '').trim().toLowerCase();
 
-      try {
-        if (checkUrl) {
+      try{
+        if (checkUrl){
           const url = new URL(checkUrl, window.location.origin);
           if (name)  url.searchParams.set('name', name);
           if (email) url.searchParams.set('email', email);
 
-          const res  = await fetch(url.toString(), { headers: { 'Accept':'application/json' } });
+          const res = await fetch(url.toString(), { headers:{'Accept':'application/json'} });
           const json = await res.json();
+          const dupName = !!json?.dupes?.name, dupEmail = !!json?.dupes?.email;
 
-          const dupName  = !!json?.dupes?.name;
-          const dupEmail = !!json?.dupes?.email;
-
-          if (dupName || dupEmail) {
+          if (dupName || dupEmail){
             this.bannerError = [
               dupName  ? 'Nama sudah terdaftar.'  : null,
               dupEmail ? 'Email sudah terdaftar.' : null,
             ].filter(Boolean).join(' ');
-
-            // ALERt TENGAH + fokuskan field
             usersPage?.showCenter?.('error', this.bannerError, 'Data Duplikat');
             (dupEmail ? emailInput : nameInput)?.focus();
-
-            this.submitting = false; // Batalkan submit total
-            return false;
+            this.submitting = false; return false;
           }
         }
-
-        // Lolos pre-check → submit native TANPA event (hindari loop)
-        this.bannerError = '';
-        this._nativeBypass = true;
+        this.bannerError = ''; this._nativeBypass = true;
         HTMLFormElement.prototype.submit.call(formEl);
-      } catch (err) {
-        console.warn('[createForm] pre-check error, tahan submit.', err);
+      }catch(err){
+        console.warn('[superadmin.createForm] pre-check error', err);
         this.bannerError = 'Terjadi masalah saat memeriksa data. Coba lagi.';
         usersPage?.showCenter?.('error', this.bannerError, 'Gagal');
-        this.submitting = false;
-        return false;
+        this.submitting = false; return false;
       }
     }
   });
 
-  // ====== EDIT FORM component ======
-  window.editForm = (getEditState) => ({
-    submitting: false,
-    bannerError: '',
-    _nativeBypass: false,
-    state: { id:null, name:'', email:'', role:'' },
-
-    init() {
-      this.state = { ...getEditState() };
-    },
-
-    async doSubmit(e, formEl) {
+  // EDIT form (pre-check dupes + ignore_id)
+  window.editForm = () => ({
+    submitting:false, bannerError:'', _nativeBypass:false,
+    state:{ id:null, name:'', email:'', role:'' },
+    async doSubmit(e, formEl){
       e?.preventDefault?.(); e?.stopPropagation?.(); e?.stopImmediatePropagation?.();
-      if (this.submitting) return;
-      this.submitting = true;
+      if (this.submitting) return; this.submitting = true;
 
-      const root = formEl.closest('[x-data="usersPage"]');
-      const usersPage = root?.__x?.$data;
-      const checkUrl  = usersPage?.__checkUrl || null;
+      const root = formEl.closest('[x-data="usersPage"]'); const usersPage = root?.__x?.$data;
+      const checkUrl = usersPage?.__checkUrl || null;
 
-      const id         = this.state.id;
+      const id = this.state.id;
       const nameInput  = formEl.querySelector('input[name="name"]');
       const emailInput = formEl.querySelector('input[name="email"]');
       const name  = (nameInput?.value || '').trim();
       const email = (emailInput?.value || '').trim().toLowerCase();
 
-      try {
-        if (checkUrl) {
+      try{
+        if (checkUrl){
           const url = new URL(checkUrl, window.location.origin);
           if (name)  url.searchParams.set('name', name);
           if (email) url.searchParams.set('email', email);
           if (id)    url.searchParams.set('ignore_id', String(id));
 
-          const res  = await fetch(url.toString(), { headers: { 'Accept':'application/json' } });
+          const res = await fetch(url.toString(), { headers:{'Accept':'application/json'} });
           const json = await res.json();
+          const dupName = !!json?.dupes?.name, dupEmail = !!json?.dupes?.email;
 
-          const dupName  = !!json?.dupes?.name;
-          const dupEmail = !!json?.dupes?.email;
-
-          if (dupName || dupEmail) {
+          if (dupName || dupEmail){
             this.bannerError = [
               dupName  ? 'Nama sudah terdaftar.'  : null,
               dupEmail ? 'Email sudah terdaftar.' : null,
             ].filter(Boolean).join(' ');
-
             usersPage?.showCenter?.('error', this.bannerError, 'Data Duplikat');
             (dupEmail ? emailInput : nameInput)?.focus();
-
-            this.submitting = false; // Batalkan submit total
-            return false;
+            this.submitting = false; return false;
           }
         }
-
-        // Lolos pre-check → submit native
-        this.bannerError = '';
-        this._nativeBypass = true;
+        this.bannerError = ''; this._nativeBypass = true;
         HTMLFormElement.prototype.submit.call(formEl);
-      } catch (err) {
-        console.warn('[editForm] pre-check error, tahan submit.', err);
+      }catch(err){
+        console.warn('[superadmin.editForm] pre-check error', err);
         this.bannerError = 'Terjadi masalah saat memeriksa data. Coba lagi.';
         usersPage?.showCenter?.('error', this.bannerError, 'Gagal');
-        this.submitting = false;
-        return false;
+        this.submitting = false; return false;
       }
     }
   });
 });
 </script>
-
 @endpush
 @endsection

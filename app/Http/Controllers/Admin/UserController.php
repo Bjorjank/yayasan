@@ -190,6 +190,21 @@ class UserController extends Controller
         }
     }
 
+
+    public function editJson(User $user)
+    {
+        // Ambil role pertama (jika pakai Spatie)
+        $role = $user->getRoleNames()->first() ?? '';
+
+        return response()->json([
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $role,
+        ]);
+    }
+
+
     /**
      * Delete user (modal konfirmasi).
      */
