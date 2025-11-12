@@ -126,21 +126,15 @@ Route::middleware(['auth','role:superadmin'])
     ->prefix('superadmin')
     ->name('superadmin.')
     ->group(function () {
-        Route::get('/dashboard', [SADashboard::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Superadmin\DashboardController::class, 'index'])->name('dashboard');
 
-        // Campaigns (index)
-        Route::get('/campaigns', function () {
-            $items = Campaign::latest()->paginate(15)->withQueryString();
-            return view('superadmin.campaigns.index', compact('items'));
-        })->name('campaigns.index');
-
-        // Create (view)
-        Route::view('/campaigns/create', 'superadmin.campaigns.create')->name('campaigns.create');
-
-        // Edit (binding)
-        Route::get('/campaigns/{campaign}/edit', function (Campaign $campaign) {
-            return view('superadmin.campaigns.edit', compact('campaign'));
-        })->name('campaigns.edit');
+        // Superadmin Campaigns (full CRUD)
+        Route::get('/campaigns', [\App\Http\Controllers\Superadmin\CampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('/campaigns/create', [\App\Http\Controllers\Superadmin\CampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [\App\Http\Controllers\Superadmin\CampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('/campaigns/{campaign}/edit', [\App\Http\Controllers\Superadmin\CampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('/campaigns/{campaign}', [\App\Http\Controllers\Superadmin\CampaignController::class, 'update'])->name('campaigns.update');
+        Route::delete('/campaigns/{campaign}', [\App\Http\Controllers\Superadmin\CampaignController::class, 'destroy'])->name('campaigns.destroy');
 
         // Donations (list campaign untuk laporan)
         Route::get('/donations', function () {
@@ -176,6 +170,10 @@ Route::middleware(['auth','role:superadmin'])
         Route::post('/users',          [SAUser::class, 'store'])->name('users.store');
         Route::put('/users/{user}',    [SAUser::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [SAUser::class, 'destroy'])->name('users.destroy');
+        // routes/web.php (di dalam group superadmin...)
+        Route::get('/users/check-unique', [\App\Http\Controllers\Superadmin\UserController::class, 'checkUnique'])
+            ->name('users.check-unique');
+
     });
 
 /*
@@ -208,11 +206,15 @@ Route::middleware(['auth','role:superadmin|admin'])
 | ADMIN CAMPAIGN CRUD (endpoint /admin/campaigns)
 |--------------------------------------------------------------------------
 */
+
+// --- ADMIN CAMPAIGN CRUD (endpoint /admin/campaigns) ---
 Route::middleware(['auth', 'role:superadmin|admin'])->group(function () {
-    Route::get('/admin/campaigns',               [CampaignController::class, 'adminIndex'])->name('admin.campaigns.index');
-    Route::post('/admin/campaigns',              [CampaignController::class, 'store'])->name('admin.campaigns.store');
-    Route::put('/admin/campaigns/{campaign}',    [CampaignController::class, 'update'])->name('admin.campaigns.update');
-    Route::delete('/admin/campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('admin.campaigns.destroy');
+    Route::get('/admin/campaigns',               [\App\Http\Controllers\Admin\CampaignController::class, 'index'])->name('admin.campaigns.index');
+    Route::get('/admin/campaigns/create',        [\App\Http\Controllers\Admin\CampaignController::class, 'create'])->name('admin.campaigns.create');
+    Route::post('/admin/campaigns',              [\App\Http\Controllers\Admin\CampaignController::class, 'store'])->name('admin.campaigns.store');
+    Route::get('/admin/campaigns/{campaign}/edit', [\App\Http\Controllers\Admin\CampaignController::class, 'edit'])->name('admin.campaigns.edit');
+    Route::put('/admin/campaigns/{campaign}',    [\App\Http\Controllers\Admin\CampaignController::class, 'update'])->name('admin.campaigns.update');
+    Route::delete('/admin/campaigns/{campaign}', [\App\Http\Controllers\Admin\CampaignController::class, 'destroy'])->name('admin.campaigns.destroy');
 });
 
 /*

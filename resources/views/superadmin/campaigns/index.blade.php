@@ -1,4 +1,4 @@
-{{-- resources/views/admin/campaigns/index.blade.php --}}
+{{-- resources/views/superadmin/campaigns/index.blade.php --}}
 @extends('layouts.superadmin')
 
 @section('content')
@@ -135,7 +135,7 @@
                           category: @js($c->category),
                           description: @js($c->description),
                           cover_url: @js($coverUrl),
-                          update_url: @js(route('admin.campaigns.update', $c))
+                          update_url: @js(route('superadmin.campaigns.update', $c))
                         })">Edit</button>
 
                 <button type="button"
@@ -144,7 +144,7 @@
                           id: {{ $c->id }},
                           title: @js($c->title),
                           slug: @js($c->slug),
-                          action: @js(route('admin.campaigns.destroy', $c))
+                          action: @js(route('superadmin.campaigns.destroy', $c))
                         })">Hapus</button>
               </div>
             </td>
@@ -174,7 +174,7 @@
         <button type="button" class="text-gray-500 hover:text-gray-700" @click="showCreate=false" aria-label="Tutup">✕</button>
       </div>
 
-      <form method="post" action="{{ route('admin.campaigns.store') }}" class="p-6 space-y-4"
+      <form method="post" action="{{ route('superadmin.campaigns.store') }}" class="p-6 space-y-4"
             enctype="multipart/form-data" @submit="onCreateSubmit">
         @csrf
 
